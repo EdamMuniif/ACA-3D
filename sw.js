@@ -1,8 +1,8 @@
 /* ACA-3D keeps offline play without serving stale game logic. */
-const VERSION = 'arrow-cube-away-cache-v5';
+const VERSION = 'arrow-cube-away-cache-v6';
 const ASSETS = [
-  './', './index.html', './styles.css?v=5', './core.js?v=5',
-  './game.js?v=5', './icon.svg', './manifest.webmanifest'
+  './', './index.html', './styles.css?v=6', './core.js?v=6',
+  './game.js?v=6', './icon.svg', './manifest.webmanifest'
 ];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(VERSION).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting()));

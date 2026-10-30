@@ -194,9 +194,24 @@
     return { ...config, arrows, total: arrows.length };
   }
 
+  // A completed puzzle awards points. Replays award only improvements
+  // over the player's previous best, preventing unlimited score farming.
+  function calculateLevelScore({arrows,hearts,tier,hints}={}) {
+    const count=Math.max(0,Math.floor(Number(arrows)||0));
+    const lives=Math.max(0,Math.min(3,Math.floor(Number(hearts)||0)));
+    const assists=Math.max(0,Math.floor(Number(hints)||0));
+    const tierBonus=tier==='Hard'?150:tier==='Medium'?75:25;
+    return Math.max(0,count*10 + lives*25 + tierBonus - assists*15);
+  }
+  function getScoreAward(previousBest,score) {
+    const oldBest=Math.max(0,Math.floor(Number(previousBest)||0));
+    const updated=Math.max(oldBest,Math.max(0,Math.floor(Number(score)||0)));
+    return {best:updated,awarded:updated-oldBest};
+  }
+
   function availableArrows(level) {
     return level.arrows.filter(a => !a.removed && !isBlocked(a, level.arrows, level.size));
   }
 
-  return { FACE_IDS, LEVEL_COUNT, getLevelConfig, generateLevel, isBlocked, getBlocker, getDirection, getEscapeShape, availableArrows };
+  return { FACE_IDS, LEVEL_COUNT, getLevelConfig, generateLevel, isBlocked, getBlocker, getDirection, getEscapeShape, availableArrows, calculateLevelScore, getScoreAward };
 });

@@ -17,18 +17,29 @@
   ];
   const COLORS = ['#0d658c','#6d54d8','#008f88','#d5842b','#a14f9e','#2076cb'];
   const PERSIST_KEY = 'arrow-cube-away-v1';
-  const base = { unlocked:1, lastLevel:1, completed:[], sound:true, colorful:false };
+  const base = { unlocked:1, lastLevel:1, completed:[], sound:true, colorful:false, playerName:'Player', bestScores:{}, points:0 };
   function loadSave() {
     try {
       const parsed = JSON.parse(localStorage.getItem(PERSIST_KEY));
       if (!parsed || typeof parsed !== 'object') return { ...base };
       const completed = Array.isArray(parsed.completed) ? parsed.completed.filter(n => Number.isInteger(n) && n >= 1 && n <= 15) : [];
+      const bestScores = {};
+      if (parsed.bestScores && typeof parsed.bestScores === 'object' && !Array.isArray(parsed.bestScores)) {
+        for(let n=1;n<=Core.LEVEL_COUNT;n++) {
+          const value=Number(parsed.bestScores[n]);
+          if(Number.isFinite(value) && value>0) bestScores[n]=Math.min(100000,Math.floor(value));
+        }
+      }
+      const playerName=typeof parsed.playerName === 'string' ? parsed.playerName.trim().slice(0,24) : '';
       return {
         unlocked:Math.min(15,Math.max(1,Number(parsed.unlocked) || 1)),
         lastLevel:Math.min(15,Math.max(1,Number(parsed.lastLevel) || 1)),
         completed:[...new Set(completed)],
         sound:parsed.sound !== false,
-        colorful:parsed.colorful === true
+        colorful:parsed.colorful === true,
+        playerName:playerName || 'Player',
+        bestScores,
+        points:Object.values(bestScores).reduce((sum,n)=>sum+n,0)
       };
     } catch { return { ...base }; }
   }
@@ -50,6 +61,7 @@
   let sceneWidth = 0, sceneHeight = 0, sceneScale = 0;
   let audioContext = null;
   let lastTime = 0;
+  let screenMode = 'home', hintsUsed = 0, lastScoreAward = 0, lastLevelScore = 0;
 
   function playSound(kind) {
     if (!progress.sound) return;
@@ -85,6 +97,44 @@
     lastToastTimer = setTimeout(() => toast.classList.remove('visible'),2100);
   }
 
+  function updateProfileDisplays() {
+    const name=progress.playerName;
+    $('homePlayerGreeting').textContent=name;
+    if(document.activeElement!==$('playerNameInput')) $('playerNameInput').value=name;
+    $('homePoints').textContent=progress.points.toLocaleString();
+    $('homeCompleted').textContent=progress.completed.length+' / 15';
+    $('homeNextLevel').textContent=String(progress.unlocked).padStart(2,'0');
+    $('homeProgressFill').style.width=(progress.completed.length/Core.LEVEL_COUNT*100)+'%';
+    $('levelPlayerLabel').textContent=name;
+    $('levelPointsLabel').textContent=progress.points.toLocaleString();
+    $('levelUnlockedLabel').textContent=String(progress.unlocked);
+    $('hudPlayerName').textContent=name;
+    $('hudPoints').textContent=progress.points.toLocaleString();
+    $('playBtnLabel').textContent=progress.completed.length ? 'Continue playing' : 'Start playing';
+  }
+  function savePlayerName() {
+    const input=$('playerNameInput');
+    const name=input.value.trim().replace(/\s+/g,' ').slice(0,24);
+    progress.playerName=name||'Player';
+    input.value=progress.playerName;
+    persist();
+    updateProfileDisplays();
+  }
+  function showScreen(which) {
+    if(!['home','levels','play'].includes(which)) return;
+    screenMode=which;
+    $('homeScreen').hidden=which!=='home';
+    $('levelsScreen').hidden=which!=='levels';
+    $('playScreen').hidden=which!=='play';
+    $('homeNavBtn').classList.toggle('active',which==='home');
+    $('levelsNavBtn').classList.toggle('active',which==='levels');
+    hideModal();
+    updateProfileDisplays();
+    if(which==='levels') renderLevels();
+    if(which==='play') { refreshSize(); requestAnimationFrame(refreshSize); }
+    window.scrollTo(0,0);
+  }
+
   function updateHUD() {
     $('levelTitle').textContent = `Level ${String(currentLevel).padStart(2,'0')}`;
     $('levelFraction').textContent = `${String(currentLevel).padStart(2,'0')} / 15`;
@@ -98,25 +148,44 @@
     $('progressFill').style.width = percent+'%';
     $('progressTrack').setAttribute('aria-valuenow',String(percent));
     $('statSolved').textContent = String(progress.completed.length).padStart(2,'0');
+    updateProfileDisplays();
     $('stageNote').textContent = remaining === 0 ? 'ALL ARROWS CLEARED' : 'ROTATE · FOLLOW THE ARROWHEAD · FIND A CLEAR EXIT';
   }
 
   function renderLevels() {
-    for (const [container,start] of [['easyLevels',1],['mediumLevels',6],['hardLevels',11]]) {
-      $(container).innerHTML = '';
-      for (let index=start;index<start+5;index++) {
-        const btn = document.createElement('button');
-        btn.className = 'level-tile';
-        btn.textContent = index < 10 ? '0'+index : String(index);
-        const unlocked = index <= progress.unlocked;
-        const complete = progress.completed.includes(index);
-        if (complete) btn.classList.add('completed');
-        if (index === currentLevel) btn.classList.add('current');
-        if (!unlocked) { btn.classList.add('locked'); btn.disabled = true; btn.setAttribute('aria-label',`Level ${index}, locked`); }
-        else btn.setAttribute('aria-label',`Level ${index}${complete?', completed':''}`);
-        if (complete && index !== currentLevel) btn.title = 'Completed';
-        if (unlocked) btn.addEventListener('click',() => { hideModal();startLevel(index); });
-        $(container).appendChild(btn);
+    for(const [smallId,largeId,start] of [
+      ['easyLevels','easyLevelsScreen',1],
+      ['mediumLevels','mediumLevelsScreen',6],
+      ['hardLevels','hardLevelsScreen',11]
+    ]) {
+      $(smallId).replaceChildren();
+      $(largeId).replaceChildren();
+      for(let n=start;n<start+5;n++) {
+        const unlocked=n<=progress.unlocked;
+        const complete=progress.completed.includes(n);
+        const selected=n===currentLevel;
+        const best=Number(progress.bestScores[n]||0);
+        const openLevel=()=>{startLevel(n);showScreen('play');};
+        const small=document.createElement('button');
+        small.type='button';
+        small.className='level-tile'+(complete?' completed':'')+(selected?' current':'')+(!unlocked?' locked':'');
+        small.textContent=String(n).padStart(2,'0');
+        small.disabled=!unlocked;
+        small.setAttribute('aria-label',`Level ${n}, ${!unlocked?'locked':complete?'completed':'unlocked'}`);
+        if(unlocked)small.addEventListener('click',openLevel);
+        $(smallId).appendChild(small);
+
+        const tile=document.createElement('button');
+        tile.type='button';
+        tile.className='level-hub-tile'+(complete?' completed':'')+(selected?' current':'')+(!unlocked?' locked':'');
+        tile.disabled=!unlocked;
+        tile.setAttribute('aria-label',`Level ${n}, ${!unlocked?'locked':complete?'completed':'available'}`);
+        const num=document.createElement('span');num.className='tile-number';num.textContent=String(n).padStart(2,'0');
+        const caption=document.createElement('span');caption.className='tile-caption';
+        caption.textContent=!unlocked?'LOCKED':complete?`✓ BEST ${best.toLocaleString()}`:selected?'CONTINUE':'PLAY';
+        tile.append(num,caption);
+        if(unlocked)tile.addEventListener('click',openLevel);
+        $(largeId).appendChild(tile);
       }
     }
   }
@@ -128,13 +197,13 @@
     progress.lastLevel = currentLevel;
     persist();
     level = Core.generateLevel(currentLevel);
-    hearts = 3;
+    hearts = 3; hintsUsed = 0; lastScoreAward = 0; lastLevelScore = 0;
     hoveredId = null; hintedId = null;
     yaw = -.66; pitch = .43; desiredYaw = yaw;
     $('toast').classList.remove('visible');
     hideModal();
     updateHUD(); renderLevels();
-    canvas.focus({ preventScroll:true });
+    if(screenMode==='play') canvas.focus({ preventScroll:true });
   }
 
   function rotateVector(p) {
@@ -244,7 +313,8 @@
   }
 
   function draw(time) {
-    if (!sceneWidth || !level) return;
+    requestAnimationFrame(draw);
+    if (screenMode!=='play' || !sceneWidth || !sceneHeight || !level) return;
     const elapsed = Math.min(40,time-lastTime || 16);
     lastTime=time;
     if (activeEscape && time-activeEscape.escape.startedAt >= activeEscape.escape.duration) {
@@ -266,7 +336,6 @@
       drawFace(face);
       for (const arrow of level.arrows) if (arrow.face===face.id) drawArrow(arrow,face,time);
     }
-    requestAnimationFrame(draw);
   }
   function refreshSize() {
     const rect=stage.getBoundingClientRect();
@@ -362,7 +431,7 @@
       if (hearts===0) {
         setToast('No hearts left. Try again.','warning');
         const generation=activeGeneration;
-        setTimeout(()=>{if(generation===activeGeneration) showLossModal();},550);
+        setTimeout(()=>{if(generation===activeGeneration && screenMode==='play') showLossModal();},550);
       } else setToast('Blocked exit — highlighted arrow is in the way.','warning');
       return;
     }
@@ -377,6 +446,11 @@
     updateHUD();
   }
   function finishLevel() {
+    lastLevelScore=Core.calculateLevelScore({arrows:level.total,hearts,tier:level.tier,hints:hintsUsed});
+    const outcome=Core.getScoreAward(progress.bestScores[currentLevel]||0,lastLevelScore);
+    lastScoreAward=outcome.awarded;
+    progress.bestScores[currentLevel]=outcome.best;
+    progress.points=Object.values(progress.bestScores).reduce((sum,n)=>sum+n,0);
     if (!progress.completed.includes(currentLevel)) progress.completed.push(currentLevel);
     progress.unlocked=Math.min(15,Math.max(progress.unlocked,currentLevel+1));
     persist();updateHUD();renderLevels();
@@ -400,6 +474,7 @@
       pitch=goal[1];
       setToast('Rotating to reveal a free arrow.','success');
     } else setToast('Highlighted arrow has a clear exit!','success');
+    hintsUsed++;
     hintedId=picked.id;
     hintExpiry=performance.now()+5200;
     playSound('hint');
@@ -433,16 +508,16 @@
     const final=currentLevel===15;
     openModal({ icon:'✦',eyebrow:final?'ALL CHALLENGES COMPLETE':'PUZZLE COMPLETE',
       title:final?'Cube master!':'Level cleared!',
-      message:final?'You completed every Easy, Medium, and Hard challenge. All levels are now replayable.':'Every arrow escaped. Your next puzzle is ready.',
-      stats:`<span>✓ &nbsp; ${level.total} ARROWS CLEARED</span><span>♥ &nbsp; ${hearts} HEARTS LEFT</span>`,
-      buttons:[{text:'Replay level',action:()=>startLevel(currentLevel)},
-        {text:final?'Play Level 01':'Next level →',primary:true,action:()=>startLevel(final?1:currentLevel+1)}]
+      message:final?'Every level completed! Replay to beat your best scores.':'Every arrow escaped. Your score is saved on this device.',
+      stats:`<span>✦ +${lastScoreAward} POINTS</span><span>★ ${lastLevelScore} THIS RUN</span><span>♥ ${hearts} HEARTS</span>`,
+      buttons:[{text:'Levels',action:()=>showScreen('levels')},
+        {text:final?'Home':'Next level →',primary:true,action:()=>final?showScreen('home'):startLevel(currentLevel+1)}]
     });
   }
   function showLossModal() {
     openModal({icon:'↺',eyebrow:'GIVE IT ANOTHER GO',title:'Out of hearts',
       message:'Blocked arrows cost a heart. Look for a clear lane, or use a hint before tapping.',
-      buttons:[{text:'View cube',action:hideModal},{text:'Try again',primary:true,action:()=>startLevel(currentLevel)}]});
+      buttons:[{text:'Home',action:()=>showScreen('home')},{text:'Try again',primary:true,action:()=>startLevel(currentLevel)}]});
   }
   function toggleSound() { progress.sound=!progress.sound;persist();document.body.classList.toggle('muted',!progress.sound);$('soundBtn').setAttribute('aria-label',progress.sound?'Mute sounds':'Unmute sounds'); }
   function addSettingsRow(container,title,subtitle,value,onChange) {
@@ -467,6 +542,20 @@
     const box=$('modalExtra');
     addSettingsRow(box,'Sound effects','Gentle success and blocked-move sounds',progress.sound,()=>toggleSound());
     addSettingsRow(box,'Colorful mode','Use distinct colors for each cube side',progress.colorful,v=>{progress.colorful=v;persist();});
+    const reset=document.createElement('button');
+    reset.className='setting-danger';
+    reset.type='button';
+    reset.textContent='Reset all progress and points';
+    reset.addEventListener('click',confirmResetProgress);
+    box.appendChild(reset);
+  }
+  function confirmResetProgress() {
+    openModal({icon:'↺',eyebrow:'RESET GAME PROGRESS',title:'Start a new game?',
+      message:'This permanently resets unlocked levels, completed levels and points on this device. Your player name and settings are kept.',
+      buttons:[{text:'Keep progress',primary:true,action:openSettings},{text:'Reset game',action:()=>{
+        progress.unlocked=1;progress.lastLevel=1;progress.completed=[];progress.bestScores={};progress.points=0;
+        persist();startLevel(1);showScreen('home');
+      }}]});
   }
   function openHelp() {
     openModal({icon:'↗',eyebrow:'FOUR SIMPLE RULES',title:'How to play',message:'',
@@ -476,10 +565,18 @@
       ['01 · Rotate','Drag left/right/up/down to inspect every side. You can use the Left / Right buttons too.'],
       ['02 · Check the exit','Each arrow follows its own bends head-first, with the tail following behind. It exits straight beyond its arrowhead. The cells ahead of that head must be clear.'],
       ['03 · Release','Tap a clear arrow to slide it away. A blocked tap loses one heart, but a hint is free.'],
-      ['04 · Complete','Remove all arrows on every side to unlock the next level. Your progress saves automatically on this device.']
+      ['04 · Complete','Clear the cube to unlock the next level and score points. More arrows, higher difficulty, and remaining hearts increase score. Each hint deducts 15 points. Replaying only adds improvements over your best score.']
     ]) {const p=document.createElement('p');p.className='help-copy';const strong=document.createElement('strong');strong.textContent=title+' — ';p.append(strong,document.createTextNode(description));help.appendChild(p);}
   }
 
+  $('homeNavBtn').addEventListener('click',()=>showScreen('home'));
+  $('levelsNavBtn').addEventListener('click',()=>showScreen('levels'));
+  $('levelBackBtn').addEventListener('click',()=>showScreen('home'));
+  $('pickLevelBtn').addEventListener('click',()=>{savePlayerName();showScreen('levels');});
+  $('playBtn').addEventListener('click',()=>{savePlayerName();startLevel(Math.min(progress.unlocked,progress.lastLevel));showScreen('play');});
+  $('saveNameBtn').addEventListener('click',savePlayerName);
+  $('playerNameInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();savePlayerName();$('playBtn').focus();}});
+  $('playerNameInput').addEventListener('change',savePlayerName);
   $('rotateLeftBtn').addEventListener('click',()=>desiredYaw+=Math.PI/2);
   $('rotateRightBtn').addEventListener('click',()=>desiredYaw-=Math.PI/2);
   $('resetBtn').addEventListener('click',()=>{startLevel(currentLevel);setToast('Level restarted.');});
@@ -493,6 +590,7 @@
   const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(refreshSize) : null;
   if(resizeObserver)resizeObserver.observe(stage);
   window.addEventListener('resize',refreshSize);
-  refreshSize();startLevel(Math.min(progress.unlocked,progress.lastLevel));
+  startLevel(Math.min(progress.unlocked,progress.lastLevel));
+  showScreen('home');
   requestAnimationFrame(draw);
 })();

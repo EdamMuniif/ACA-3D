@@ -96,3 +96,36 @@ No packages are required. Browser smoke checks can be run with any modern Chromi
 - **Visual polish:** Calmer cube stage, subtle instruction label, and mobile-friendly action layout.
 
 The static UI remains framework-free. Tests cover all levels, arrow routing, blocker removal, and path motion. Future improvements should include assessing dependency depth as well as arrow count, plus custom authored/tutorial levels and cross-face paths.
+
+## Complete game application (V6)
+
+The app now has three mobile-friendly screens:
+
+1. **Home** — enter a local player name, see points and completed stages, start or continue.
+2. **Levels** — choose from 15 progressively harder stages. Locked levels cannot be opened.
+3. **Play** — rotate the 3D cube, tap arrows with unobstructed head exit rays, use hints, lose hearts for blocked moves, restart the current attempt, and advance on a win.
+
+**Scoring rules:** A level is scored only when all its arrows escape:
+
+```text
+level score = 10 × cleared arrows + difficulty bonus + 25 × remaining hearts − 15 × hints used
+difficulty bonus: Easy 25, Medium 75, Hard 150
+minimum score: 0
+```
+
+Each level stores its personal best. Replaying a level adds to total points **only when the
+new score beats its previous best**; restarting or losing an attempt does not award points.
+Totals are recalculated from the 15 saved personal best scores.
+
+**Player data:** Name, points, personal best scores, unlocked stages, completed stages,
+audio and color settings are saved in the browser's existing `localStorage` key.
+Older saves migrate automatically without discarding unlocked levels. The name is a
+local display name only; there is no online account or leaderboard.
+
+**Restart options:** Use *Restart* during play to start the current level with three hearts.
+Use *Settings → Reset all progress and points* to begin from Level 1; this requires a
+confirmation and keeps the player's name and preferences. Reset is irreversible on that device.
+
+**Quality checks:** Run `node --test tests/*.test.cjs` to verify puzzle solvability,
+score anti-farming, HTML element references, controller navigation, legacy-save migration,
+and the offline cache. No app build tooling or runtime packages are required.
