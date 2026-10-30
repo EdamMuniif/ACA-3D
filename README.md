@@ -129,3 +129,24 @@ confirmation and keeps the player's name and preferences. Reset is irreversible 
 **Quality checks:** Run `node --test tests/*.test.cjs` to verify puzzle solvability,
 score anti-farming, HTML element references, controller navigation, legacy-save migration,
 and the offline cache. No app build tooling or runtime packages are required.
+
+## Mobile usability update (V7)
+
+Based on the supplied mobile Chrome screenshot, this release focuses on **navigation, readability,
+and reducing the time between opening the page and starting the game** rather than modifying puzzle rules.
+
+- The brand occupies its own header row at phone widths; Home, Levels, sound and settings
+  form an accessible second row instead of being clipped offscreen.
+- The home hero uses shorter copy, a clear **Play now / Continue** action, a Level Select action
+  and a compact inline progress summary (current level, points, completed count).
+- The large decorative hero illustration is kept on desktop but hidden on small screens
+  so the player profile and progress appear sooner.
+- Mobile-level selection uses bigger three-column tiles; in-game actions form a predictable
+  two-column grid with a visible **Restart** control.
+- Small-screen actions are at least 44px high and retain visible keyboard focus styling.
+- Browser toolbar/footer UI belongs to the browser and cannot be changed by the website.
+- All existing scoring, saves, game engine, audio, hints, and offline support are preserved.
+- Asset URLs and service-worker cache are bumped to v7 to avoid old CSS and JS on mobile.
+
+Run `node --test tests/*.test.cjs` to check navigation, DOM references, cache versions,
+scoring and the game logic. Responsive visual testing on actual devices is recommended.

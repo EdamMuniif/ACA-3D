@@ -74,9 +74,14 @@ test('home, level select, play, name and restart function in the browser control
   assert.equal(el('homeScreen').hidden,false);
   assert.equal(el('playScreen').hidden,true);
   assert.ok(raf.length>0,'Animation loop must initialize');
-  el('playerNameInput').value='Ada';
+  assert.equal(el('heroCurrentLevel').textContent,'01');
+  assert.equal(el('heroWins').textContent,'0 / 15');
+  assert.equal(el('heroPoints').textContent,'0');
+  assert.equal(el('homeNavBtn').attrs['aria-pressed'],'true');
+    el('playerNameInput').value='Ada';
   el('saveNameBtn').click();
   assert.equal(JSON.parse(localStorage.getItem('arrow-cube-away-v1')).playerName,'Ada');
+  assert.equal(el('heroPlayerName').textContent,'Ada');
   el('pickLevelBtn').click();
   assert.equal(el('levelsScreen').hidden,false);
   assert.equal(el('easyLevelsScreen').children.length,5);
@@ -101,4 +106,17 @@ test('legacy saves migrate without losing unlocked level progress',()=>{
   assert.equal(elements.get('levelTitle').textContent,'Level 03');
   assert.equal(elements.get('playScreen').hidden,false);
   assert.equal(JSON.parse(localStorage.getItem('arrow-cube-away-v1')).playerName,'Player');
+});
+
+test('mobile UX source keeps navigation touch-friendly and first-screen progress visible',()=>{
+  const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
+  const css=fs.readFileSync(path.join(__dirname,'../styles.css'),'utf8');
+  assert.match(html,/id="heroCurrentLevel"/);
+  assert.match(html,/id="heroPoints"/);
+  assert.match(html,/id="heroWins"/);
+  assert.match(css,/@media\s*\(max-width:700px\)/);
+  assert.match(css,/\.header-controls\s*\{display:grid;width:100%;grid-template-columns:/);
+  assert.match(css,/\.home-actions\s*\{display:grid;grid-template-columns:/);
+  assert.match(css,/\.hero-visual\s*\{display:none\}/);
+  assert.match(css,/\.game-actions \.game-button\s*\{display:flex;align-items:center;justify-content:center;min-width:0;min-height:48px/);
 });

@@ -8,9 +8,9 @@
   <title>Arrow Cube Away — 3D Puzzle</title>
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="stylesheet" href="./styles.css?v=6">
-  <script defer src="./core.js?v=6"></script>
-  <script defer src="./game.js?v=6"></script>
+  <link rel="stylesheet" href="./styles.css?v=7">
+  <script defer src="./core.js?v=7"></script>
+  <script defer src="./game.js?v=7"></script>
 </head>
 <body>
   <div class="app-shell">
@@ -36,14 +36,20 @@
     <main class="hub-screen" id="homeScreen" aria-labelledby="homeHeading">
       <section class="home-hero">
         <div class="home-copy">
-          <span class="home-kicker"><span class="home-led"></span> THE 3D ESCAPE CHALLENGE</span>
-          <h1 id="homeHeading">Think ahead.<br><span>Find the way out.</span></h1>
-          <p>Rotate the cube, trace each arrow's exit and release every path in the right order. Fifteen handcrafted-feel, generated logic challenges await.</p>
+          <span class="home-kicker"><span class="home-led"></span> ARROW ESCAPE PUZZLE</span>
+          <p class="hero-greeting">Ready, <strong id="heroPlayerName">Player</strong>?</p>
+          <h1 id="homeHeading">Find the<br><span>way out.</span></h1>
+          <p>Find a free arrow, tap to release it, and clear the cube. Can you solve all 15 levels?</p>
           <div class="home-actions">
-            <button type="button" class="hero-btn hero-primary" id="playBtn">▶ <span id="playBtnLabel">Start playing</span></button>
-            <button type="button" class="hero-btn hero-outline" id="pickLevelBtn">Choose a level →</button>
+            <button type="button" class="hero-btn hero-primary" id="playBtn"><span aria-hidden="true">▶</span> <span id="playBtnLabel">Play now</span></button>
+            <button type="button" class="hero-btn hero-outline" id="pickLevelBtn">Levels <span aria-hidden="true">→</span></button>
           </div>
-          <p class="home-footnote">Offline-ready · Automatic progress saving · No account required</p>
+          <div class="hero-summary" aria-label="Your saved progress">
+            <span>Current level <strong id="heroCurrentLevel">01</strong></span>
+            <span>Points <strong id="heroPoints">0</strong></span>
+            <span>Cleared <strong id="heroWins">0 / 15</strong></span>
+          </div>
+          <p class="home-footnote">Progress saves automatically on this device</p>
         </div>
         <div class="hero-visual" aria-hidden="true">
           <div class="hero-orbit orbit-one"></div><div class="hero-orbit orbit-two"></div>
@@ -89,7 +95,7 @@
 
     <main class="hub-screen level-hub" id="levelsScreen" aria-labelledby="levelsHeading" hidden>
       <div class="level-hub-heading">
-        <div><div class="section-kicker">THE LEVEL MAP</div><h1 id="levelsHeading">Choose your challenge.</h1><p>Complete levels to unlock the next stage. Replay cleared levels to improve your best score.</p></div>
+        <div><div class="section-kicker">YOUR PUZZLE JOURNEY</div><h1 id="levelsHeading">Choose a level.</h1><p>Complete levels to unlock the next stage. Replay cleared levels to improve your best score.</p></div>
         <button type="button" id="levelBackBtn" class="hero-btn hero-outline">← Back home</button>
       </div>
       <div class="level-hub-stats"><span id="levelPlayerLabel">Player</span><span><b id="levelPointsLabel">0</b> points</span><span><b id="levelUnlockedLabel">1</b> unlocked</span></div>
@@ -137,7 +143,7 @@
           <div class="stat-grid"><div class="stat-tile"><strong id="statSolved">00</strong><span>PUZZLES WON</span></div><div class="stat-tile"><strong>15</strong><span>TOTAL LEVELS</span></div></div>
         </div>
         <div class="side-card level-card">
-          <div class="card-heading"><div><div class="card-eyebrow">YOUR JOURNEY</div><h2>Choose a level</h2></div><span class="card-heading-icon">▦</span></div>
+          <div class="card-heading"><div><div class="card-eyebrow">YOUR JOURNEY</div><h2>Choose a level</h2></div><span class="card-heading-icon" aria-hidden="true">▦</span></div>
           <div class="tier-heading"><span class="tier-marker easy"></span> EASY <span>01 — 05</span></div>
           <div class="level-grid" id="easyLevels"></div>
           <div class="tier-heading"><span class="tier-marker medium"></span> MEDIUM <span>06 — 10</span></div>
