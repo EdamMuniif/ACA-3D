@@ -52,6 +52,54 @@
     return false;
   }
 
+  // The rendered arrow travels HEAD-FIRST through its own bends; its tail
+  // follows the same centreline, then continues past the cube edge.
+  // This is a visual animation: isBlocked remains the conservative rigid-slide
+  // clearance check so paths that pass it are not obstructed by other arrows.
+  function getEscapeShape(arrow, size, travel = 0) {
+    const d = getDirection(arrow);
+    const cells = arrow.cells;
+    const vertices = cells.map(c => ({ x:c.x + .5, y:c.y + .5 }));
+    const last = vertices[vertices.length - 1];
+    const tip = { x:last.x + d.x * .39, y:last.y + d.y * .39 };
+    vertices.push(tip);
+
+    const distances = [0];
+    for (let i=1;i<vertices.length;i++) {
+      distances.push(distances[i-1] + Math.hypot(
+        vertices[i].x-vertices[i-1].x, vertices[i].y-vertices[i-1].y));
+    }
+    const length = distances[distances.length-1];
+    const edgeDistance = d.x > 0 ? size-tip.x : d.x < 0 ? tip.x :
+      d.y > 0 ? size-tip.y : tip.y;
+    const totalTravel = length + Math.max(0,edgeDistance) + .75;
+    const offset = Math.min(totalTravel,Math.max(0,Number(travel)||0));
+
+    function along(distance) {
+      if (distance >= length) return {
+        x:tip.x + d.x*(distance-length),
+        y:tip.y + d.y*(distance-length)
+      };
+      for (let i=1;i<vertices.length;i++) {
+        if (distance <= distances[i]) {
+          const fraction = (distance-distances[i-1])/(distances[i]-distances[i-1]);
+          return {
+            x:vertices[i-1].x+(vertices[i].x-vertices[i-1].x)*fraction,
+            y:vertices[i-1].y+(vertices[i].y-vertices[i-1].y)*fraction
+          };
+        }
+      }
+      return { ...tip };
+    }
+    const points = [along(offset)];
+    for (let i=1;i<vertices.length;i++) {
+      if (distances[i] > offset && distances[i] < length+offset) points.push(vertices[i]);
+    }
+    const head = along(length+offset);
+    points.push(head);
+    return { points, head, direction:d, length, totalTravel };
+  }
+
   function candidatePath(rng, size, minLength, maxLength) {
     const target = randomInt(rng, minLength, maxLength);
     const path = [{ x: randomInt(rng, 0, size - 1), y: randomInt(rng, 0, size - 1) }];
@@ -129,5 +177,5 @@
     return level.arrows.filter(a => !a.removed && !isBlocked(a, level.arrows, level.size));
   }
 
-  return { FACE_IDS, LEVEL_COUNT, getLevelConfig, generateLevel, isBlocked, getDirection, availableArrows };
+  return { FACE_IDS, LEVEL_COUNT, getLevelConfig, generateLevel, isBlocked, getDirection, getEscapeShape, availableArrows };
 });

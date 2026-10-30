@@ -46,6 +46,7 @@
   let modalOpen = false;
   let lastToastTimer = 0;
   let activeGeneration = 0;
+  let activeEscape = null;
   let sceneWidth = 0, sceneHeight = 0, sceneScale = 0;
   let audioContext = null;
   let lastTime = 0;
@@ -122,6 +123,7 @@
 
   function startLevel(index) {
     activeGeneration++;
+    activeEscape = null;
     currentLevel = Math.min(Core.LEVEL_COUNT,Math.max(1,index));
     progress.lastLevel = currentLevel;
     persist();
@@ -195,35 +197,33 @@
     context.save();context.translate(sceneWidth*.5,centerY);context.scale(1,.24);context.translate(-sceneWidth*.5,-centerY);
     context.beginPath();context.arc(sceneWidth*.5,centerY,width,0,TAU);context.fillStyle=gradient;context.fill();context.restore();
   }
-  function toScreenPath(arrow,face,slide=0) {
-    const d=Core.getDirection(arrow);
-    return arrow.cells.map(c=>project(pointOnFace(face,c.x+.5+d.x*slide,c.y+.5+d.y*slide,1.019)));
-  }
   function drawArrow(arrow,face,time) {
-    if (arrow.removed && !arrow.exitingStart) return;
-    const elapsed = arrow.exitingStart ? (time-arrow.exitingStart) / 470 : 0;
-    if (arrow.exitingStart && elapsed>=1) return;
-    const progressT = Math.max(0,Math.min(1,elapsed));
-    const slide = arrow.exitingStart ? (1-Math.pow(1-progressT,2))*(level.size+2) : 0;
-    const points = toScreenPath(arrow,face,slide);
-    const direction=Core.getDirection(arrow);
-    const last = arrow.cells[arrow.cells.length-1];
-    const head = (x,y)=>project(pointOnFace(face,x+direction.x*slide,y+direction.y*slide,1.024));
-    const tip=head(last.x+.5+direction.x*.39,last.y+.5+direction.y*.39);
-    const wing1=head(last.x+.5-direction.x*.09 - direction.y*.27,last.y+.5-direction.y*.09+direction.x*.27);
-    const wing2=head(last.x+.5-direction.x*.09 + direction.y*.27,last.y+.5-direction.y*.09-direction.x*.27);
-    const path=[...points,tip];
+    if (arrow.removed && !arrow.escape) return;
+    const motion = arrow.escape;
+    const fraction = motion ? Math.max(0,Math.min(1,(time-motion.startedAt)/motion.duration)) : 0;
+    if (motion && fraction>=1) return;
+    // Ease in/out without teleporting or cutting off the arrow's trailing end.
+    const eased = fraction < .5 ? 4*fraction*fraction*fraction :
+      1-Math.pow(-2*fraction+2,3)/2;
+    const shape = Core.getEscapeShape(arrow,level.size,motion ? motion.distance*eased : 0);
+    const points = shape.points.map(p=>project(pointOnFace(face,p.x,p.y,1.019)));
+    const {direction,head:headPos} = shape;
+    const head=(x,y)=>project(pointOnFace(face,x,y,1.024));
+    const tip=head(headPos.x,headPos.y);
+    const wing1=head(headPos.x-direction.x*.46-direction.y*.27,headPos.y-direction.y*.46+direction.x*.27);
+    const wing2=head(headPos.x-direction.x*.46+direction.y*.27,headPos.y-direction.y*.46-direction.x*.27);
     const isHint = arrow.id===hintedId && time<hintExpiry && !arrow.removed;
     const isHover=arrow.id===hoveredId && !arrow.removed;
     const isBad=(arrow.badUntil||0)>time;
     const color = isBad?'#e9506b':isHint?'#079da2':progress.colorful?COLORS[FACES.indexOf(FACES.find(f=>f.id===face.id))]:'#1d3249';
     const width = Math.max(2.4,Math.min(5.2,sceneScale*.021));
     context.save();
-    context.globalAlpha = arrow.exitingStart ? Math.min(1,Math.pow(1-progressT,1.2)*1.5) : 1;
+    // Keep the full arrow visible until the tail has crossed the cube edge.
+    context.globalAlpha = motion ? Math.min(1,(1-fraction)/.07) : 1;
     if (isHint || isHover || isBad) {
-      drawSegment(path,isBad?'#ffd0d8':isHint?'#6df1e8':'#87d9fb',width+9,isHint?.70:.60);
+      drawSegment(points,isBad?'#ffd0d8':isHint?'#6df1e8':'#87d9fb',width+9,isHint?.70:.60);
     }
-    drawSegment(path,color,width);
+    drawSegment(points,color,width);
     context.beginPath(); context.moveTo(tip.x,tip.y);context.lineTo(wing1.x,wing1.y);context.lineTo(wing2.x,wing2.y);context.closePath();
     context.fillStyle=color; context.fill();
     if (isHint) {
@@ -231,13 +231,19 @@
       context.strokeStyle='rgba(5,164,159,.53)';context.lineWidth=2;context.stroke();
     }
     context.restore();
-    if (!arrow.removed) selectedPoints.push({arrow,points:path,depth:rotateVector(face.normal)[2],tip});
+    if (!arrow.removed) selectedPoints.push({arrow,points,depth:rotateVector(face.normal)[2],tip});
   }
 
   function draw(time) {
     if (!sceneWidth || !level) return;
     const elapsed = Math.min(40,time-lastTime || 16);
     lastTime=time;
+    if (activeEscape && time-activeEscape.escape.startedAt >= activeEscape.escape.duration) {
+      const finished = activeEscape;
+      finished.escape = null;
+      activeEscape = null;
+      if (level.arrows.every(a=>a.removed)) finishLevel();
+    }
     if (!drag) {
       const difference=desiredYaw-yaw;
       if (Math.abs(difference)>.001) yaw += difference * Math.min(1,elapsed*.013);
@@ -330,7 +336,8 @@
     } else if (event.key==='h'||event.key==='H') { event.preventDefault();showHint(); }
   });
   function attemptRelease(arrow) {
-    if (arrow.removed || hearts<=0) return;
+    // Keep the board stable while one head-to-tail escape is in motion.
+    if (activeEscape || arrow.removed || hearts<=0) return;
     const stamp=performance.now();
     if (Core.isBlocked(arrow,level.arrows,level.size)) {
       hearts--;
@@ -344,20 +351,23 @@
       } else setToast('Blocked! Clear another arrow first.','warning');
       return;
     }
-    arrow.removed=true;arrow.exitingStart=stamp;
+    const shape=Core.getEscapeShape(arrow,level.size);
+    arrow.removed=true;
+    arrow.escape={startedAt:stamp,distance:shape.totalTravel,
+      duration:Math.min(1200,Math.max(680,440+shape.totalTravel*85))};
+    activeEscape=arrow;
     hintedId=null;hoveredId=null;
     playSound('good');
     updateHUD();
-    if (level.arrows.every(a=>a.removed)) {
-      const generation=activeGeneration;
-      if (!progress.completed.includes(currentLevel)) progress.completed.push(currentLevel);
-      progress.unlocked=Math.min(15,Math.max(progress.unlocked,currentLevel+1));
-      persist();updateHUD();renderLevels();
-      setTimeout(()=>{if(generation===activeGeneration) showWinModal();},620);
-    }
+  }
+  function finishLevel() {
+    if (!progress.completed.includes(currentLevel)) progress.completed.push(currentLevel);
+    progress.unlocked=Math.min(15,Math.max(progress.unlocked,currentLevel+1));
+    persist();updateHUD();renderLevels();
+    showWinModal();
   }
   function showHint() {
-    if (modalOpen || !level) return;
+    if (modalOpen || !level || activeEscape) return;
     const options=Core.availableArrows(level);
     if (!options.length) return;
     const visibles=faceNormals().map(f=>f.id);
@@ -448,7 +458,7 @@
     const help=$('modalExtra');
     for (const [title,description] of [
       ['01 · Rotate','Drag left/right/up/down to inspect every side. You can use the Left / Right buttons too.'],
-      ['02 · Check the exit','Each arrow slides straight in the direction of its arrowhead. Its entire shape must avoid all other arrows on that face.'],
+      ['02 · Check the exit','Each arrow moves head-first along its path, then out in the direction of its arrowhead. Its exit must be clear of other arrows on that face.'],
       ['03 · Release','Tap a clear arrow to slide it away. A blocked tap loses one heart, but a hint is free.'],
       ['04 · Complete','Remove all arrows on every side to unlock the next level. Your progress saves automatically on this device.']
     ]) {const p=document.createElement('p');p.className='help-copy';const strong=document.createElement('strong');strong.textContent=title+' — ';p.append(strong,document.createTextNode(description));help.appendChild(p);}
