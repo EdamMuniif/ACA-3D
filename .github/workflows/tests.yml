@@ -1,0 +1,22 @@
+name: Logic tests
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Run puzzle logic tests
+        run: node --test tests/logic.test.cjs
+      - name: Check scripts parse
+        run: node --check core.js && node --check game.js && node --check sw.js
