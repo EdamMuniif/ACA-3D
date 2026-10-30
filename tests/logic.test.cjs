@@ -23,7 +23,7 @@ test('all 15 levels generate deterministically and are solvable', () => {
   }
 });
 
-test('collision checks the complete translated shape, not just arrow tip', () => {
+test('head exit ray detects blockers on same face', () => {
   const a={id:'a',face:'front',cells:[{x:0,y:1},{x:1,y:1},{x:1,y:2}]};
   const blocker={id:'b',face:'front',cells:[{x:0,y:3},{x:1,y:3}]};
   assert.equal(Core.isBlocked(a,[a,blocker],5),true);
@@ -79,6 +79,43 @@ test('video-informed reference progression is reproducible',()=>{
     for(const arrow of level.arrows){
       assert.ok(arrow.cells.length>=2);
       assert.ok(arrow.cells.every(c=>c.x>=0&&c.y>=0&&c.x<level.size&&c.y<level.size));
+    }
+  }
+});
+
+test('a bent arrow is not incorrectly blocked by a rigid-body sweep',()=>{
+  const bend={id:'bend',face:'front',cells:[{x:0,y:1},{x:1,y:1},{x:1,y:2}]};
+  const neighbor={id:'neighbor',face:'front',cells:[{x:2,y:1},{x:2,y:2}]};
+  assert.equal(Core.isBlocked(bend,[bend,neighbor],5),false);
+  neighbor.cells=[{x:0,y:3},{x:1,y:3}];
+  assert.equal(Core.isBlocked(bend,[bend,neighbor],5),true);
+  assert.deepEqual(Core.getBlocker(bend,[bend,neighbor],5),{id:'neighbor',face:'front',distance:1,cell:{x:1,y:3}});
+  neighbor.removed=true;
+  assert.equal(Core.isBlocked(bend,[bend,neighbor],5),false);
+});
+
+test('nearest obstruction is reported and removing blockers opens the exit',()=>{
+  const a={id:'a',face:'right',cells:[{x:2,y:2},{x:3,y:2}]};
+  const near={id:'near',face:'right',cells:[{x:4,y:2},{x:4,y:3}]};
+  const far={id:'far',face:'right',cells:[{x:5,y:1},{x:5,y:2}]};
+  assert.equal(Core.getBlocker(a,[a,near,far],6).id,'near');
+  near.removed=true;
+  assert.equal(Core.getBlocker(a,[a,near,far],6).id,'far');
+  far.removed=true;
+  assert.equal(Core.getBlocker(a,[a,near,far],6),null);
+});
+
+test('all generated arrow cells are unique and every turn is connected',()=>{
+  for(let n=1;n<=15;n++){
+    const board=Core.generateLevel(n);
+    const occupied=new Set();
+    for(const a of board.arrows){
+      for(let i=0;i<a.cells.length;i++){
+        const c=a.cells[i],id=`${a.face}:${c.x},${c.y}`;
+        assert.ok(!occupied.has(id),`Overlapping arrow on level ${n}`);
+        occupied.add(id);
+        if(i)assert.equal(Math.abs(c.x-a.cells[i-1].x)+Math.abs(c.y-a.cells[i-1].y),1);
+      }
     }
   }
 });

@@ -130,3 +130,16 @@ h1 { margin:0; color:#112a4a; letter-spacing:-.065em; font-size:36px; line-heigh
 @media(max-width:560px){.topbar{min-height:70px;padding:12px 15px}.brand{gap:9px}.brand-icon{width:43px;height:43px;border-radius:12px}.brand-icon svg{width:30px;height:30px}.brand-title{font-size:15px}.brand-subtitle{font-size:7px;letter-spacing:.15em}.offline-chip{display:none}.header-icon{height:38px;width:38px}.header-controls{gap:7px}.game-layout{padding:12px 9px;gap:14px}.play-panel{padding:19px 14px 13px;border-radius:19px}.progress-track{margin:0 -14px}.game-hud{padding-bottom:16px}.eyebrow{font-size:9px;letter-spacing:.10em}h1{font-size:31px}.hearts{font-size:24px}.arrow-counter{font-size:14px;padding:5px 8px}.stage{height:clamp(350px,112vw,530px);min-height:350px}.scene-top-note{left:13px;top:17px;font-size:7px;letter-spacing:.06em}.compass{right:13px;top:15px;font-size:7px}.compass-cross{font-size:15px}.stage-bottom-note{font-size:8px;bottom:13px;letter-spacing:.06em}.game-actions{gap:7px;padding-top:12px}.game-button{min-height:44px;padding:0 9px;font-size:11px}.button-icon{font-size:18px;margin-right:2px}.reset-button{display:none}.game-button.primary{padding:0 13px}.sidebar{display:flex;flex-direction:column}.side-card{width:100%}.overview-card{order:2}.level-card{order:1}.tips-card{order:3}.level-grid{gap:9px}.level-tile{min-height:45px}.page-footer{font-size:8px;line-height:1.7}.modal{padding:28px 19px 23px}}
 @media(max-width:355px){.brand-title{font-size:13px}.brand-subtitle{letter-spacing:.06em}.brand-icon{width:38px;height:38px}.game-button{font-size:10px;padding:0 7px}.level-count{display:none}.scene-top-note{font-size:7px}.compass span:last-child{display:none}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+/* Gameplay-first UI: quiet cube stage, clearer movement hints and mobile taps. */
+.stage { background:radial-gradient(circle at 50% 41%,#fff 0%,#f4fbff 60%,#eaf6fc 100%); }
+.stage-glow { opacity:.48; }
+.stage-bottom-note { background:#ffffffd9; color:#456884; padding:8px 12px; border:1px solid #dbeaf4; border-radius:100px; box-shadow:0 5px 20px #0a395411; }
+.stage-toast { width:max-content; white-space:normal; text-align:center; line-height:1.45; }
+.game-button.primary, .game-button.secondary { touch-action:manipulation; }
+@media(max-width:560px) {
+  .stage-bottom-note { font-size:8px; max-width:92%; padding:7px 9px; }
+  .game-actions { flex-wrap:wrap; }
+  .game-button { flex:1 1 auto; }
+  .game-button.primary { margin-left:0; }
+  .stage-toast { min-width:160px; }
+}

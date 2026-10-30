@@ -98,7 +98,7 @@
     $('progressFill').style.width = percent+'%';
     $('progressTrack').setAttribute('aria-valuenow',String(percent));
     $('statSolved').textContent = String(progress.completed.length).padStart(2,'0');
-    $('stageNote').textContent = remaining === 0 ? 'ALL ARROWS CLEARED' : 'DRAG TO ROTATE · TAP AN ARROW TO ESCAPE';
+    $('stageNote').textContent = remaining === 0 ? 'ALL ARROWS CLEARED' : 'ROTATE · FOLLOW THE ARROWHEAD · FIND A CLEAR EXIT';
   }
 
   function renderLevels() {
@@ -215,8 +215,8 @@
     const isHint = arrow.id===hintedId && time<hintExpiry && !arrow.removed;
     const isHover=arrow.id===hoveredId && !arrow.removed;
     const isBad=(arrow.badUntil||0)>time;
-    const color = isBad?'#e9506b':isHint?'#079da2':progress.colorful?COLORS[FACES.indexOf(FACES.find(f=>f.id===face.id))]:'#1d3249';
-    const width = Math.max(2.4,Math.min(5.2,sceneScale*.021));
+    const color = isBad?'#e9506b':isHint?'#079da2':progress.colorful?COLORS[FACES.indexOf(FACES.find(f=>f.id===face.id))]:'#152a3c';
+    const width = Math.max(2.5,Math.min(5.3,sceneScale*.023));
     context.save();
     // Keep the full arrow visible until the tail has crossed the cube edge.
     context.globalAlpha = motion ? Math.min(1,(1-fraction)/.07) : 1;
@@ -288,8 +288,11 @@
     for (const item of selectedPoints) {
       let distance=Math.hypot(x-item.tip.x,y-item.tip.y);
       for (let i=0;i<item.points.length-1;i++) distance=Math.min(distance,distanceToSegment(x,y,item.points[i],item.points[i+1]));
+      // Keep taps within a single lane on denser grids; avoid selecting
+      // neighbouring blocked arrows that are only a few pixels away.
+      const tolerance=Math.max(6,Math.min(13,sceneScale*.82/level.size));
       const candidateScore=distance-item.depth*1.25;
-      if (distance<=Math.max(13,sceneScale*.072) && candidateScore<score) {selected=item.arrow;score=candidateScore;}
+      if (distance<=tolerance && candidateScore<score) {selected=item.arrow;score=candidateScore;}
     }
     return selected;
   }
@@ -348,22 +351,26 @@
     // Keep the board stable while one head-to-tail escape is in motion.
     if (activeEscape || arrow.removed || hearts<=0) return;
     const stamp=performance.now();
-    if (Core.isBlocked(arrow,level.arrows,level.size)) {
+    const blocker=Core.getBlocker(arrow,level.arrows,level.size);
+    if (blocker) {
       hearts--;
-      arrow.badUntil=stamp+620;
+      arrow.badUntil=stamp+680;
+      hintedId=blocker.id;
+      hintExpiry=stamp+1700;
       playSound('bad');
       updateHUD();
       if (hearts===0) {
         setToast('No hearts left. Try again.','warning');
         const generation=activeGeneration;
         setTimeout(()=>{if(generation===activeGeneration) showLossModal();},550);
-      } else setToast('Blocked! Clear another arrow first.','warning');
+      } else setToast('Blocked exit — highlighted arrow is in the way.','warning');
       return;
     }
     const shape=Core.getEscapeShape(arrow,level.size);
     arrow.removed=true;
+    const reducedMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     arrow.escape={startedAt:stamp,distance:shape.totalTravel,
-      duration:Math.min(1200,Math.max(680,440+shape.totalTravel*85))};
+      duration:reducedMotion ? 200 : Math.min(1200,Math.max(680,440+shape.totalTravel*85))};
     activeEscape=arrow;
     hintedId=null;hoveredId=null;
     playSound('good');
@@ -467,7 +474,7 @@
     const help=$('modalExtra');
     for (const [title,description] of [
       ['01 · Rotate','Drag left/right/up/down to inspect every side. You can use the Left / Right buttons too.'],
-      ['02 · Check the exit','Each arrow moves head-first along its path, then out in the direction of its arrowhead. Its exit must be clear of other arrows on that face.'],
+      ['02 · Check the exit','Each arrow follows its own bends head-first, with the tail following behind. It exits straight beyond its arrowhead. The cells ahead of that head must be clear.'],
       ['03 · Release','Tap a clear arrow to slide it away. A blocked tap loses one heart, but a hint is free.'],
       ['04 · Complete','Remove all arrows on every side to unlock the next level. Your progress saves automatically on this device.']
     ]) {const p=document.createElement('p');p.className='help-copy';const strong=document.createElement('strong');strong.textContent=title+' — ';p.append(strong,document.createTextNode(description));help.appendChild(p);}
