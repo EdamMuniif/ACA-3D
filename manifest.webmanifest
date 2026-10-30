@@ -1,0 +1,11 @@
+{
+  "name": "Arrow Cube Away — 3D Puzzle",
+  "short_name": "Arrow Cube Away",
+  "description": "Offline 3D arrow escape logic puzzles.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#eaf4fb",
+  "theme_color": "#0c2343",
+  "icons": [{ "src":"./icon.svg", "sizes":"any", "type":"image/svg+xml", "purpose":"any" }]
+}
