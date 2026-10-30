@@ -1,5 +1,5 @@
 /* Offline cache, scoped to the GitHub Pages project subdirectory. */
-const VERSION = 'arrow-cube-away-cache-v4';
+const VERSION = 'arrow-cube-away-cache-v5';
 const ASSETS = ['./', './index.html', './styles.css', './core.js', './game.js', './icon.svg', './manifest.webmanifest',
   './fonts/InstrumentSans-Regular.woff2', './fonts/InstrumentSans-Bold.woff2', './fonts/InstrumentSerif-Regular.woff2', './fonts/InstrumentSerif-Italic.woff2'];
 self.addEventListener('install', event => {

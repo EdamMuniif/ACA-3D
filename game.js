@@ -165,7 +165,13 @@
     if (points.length < 2) return;
     context.save();context.globalAlpha *= alpha;
     context.beginPath();context.moveTo(points[0].x,points[0].y);
-    for (let i=1;i<points.length;i++) context.lineTo(points[i].x,points[i].y);
+    // Round every bend so the body flows around corners instead of snapping.
+    for (let i=1;i<points.length-1;i++) {
+      const a=points[i-1],b=points[i],c=points[i+1];
+      const r=Math.min(11,Math.hypot(b.x-a.x,b.y-a.y)/2,Math.hypot(c.x-b.x,c.y-b.y)/2);
+      context.arcTo(b.x,b.y,c.x,c.y,r);
+    }
+    context.lineTo(points[points.length-1].x,points[points.length-1].y);
     context.lineCap = 'round'; context.lineJoin = 'round';
     context.strokeStyle=style;context.lineWidth=width;context.stroke();
     context.restore();
@@ -224,9 +230,10 @@
     const motion = arrow.escape;
     const fraction = motion ? Math.max(0,Math.min(1,(time-motion.startedAt)/motion.duration)) : 0;
     if (motion && fraction>=1) return;
-    // Ease in/out without teleporting or cutting off the arrow's trailing end.
-    const eased = fraction < .5 ? 4*fraction*fraction*fraction :
-      1-Math.pow(-2*fraction+2,3)/2;
+    // Start from rest, then glide at one steady speed: the head leads and the tail
+    // follows the same line, with no slow-down while the arrow is still on the cube.
+    const ramp = .2, cruise = 1/(1-ramp/2);
+    const eased = fraction < ramp ? cruise*fraction*fraction/(2*ramp) : cruise*(fraction-ramp/2);
     const shape = Core.getEscapeShape(arrow,level.size,motion ? motion.distance*eased : 0);
     const points = shape.points.map(p=>project(pointOnFace(face,p.x,p.y,1.019)));
     const {direction,head:headPos} = shape;
@@ -397,7 +404,7 @@
     const shape=Core.getEscapeShape(arrow,level.size);
     arrow.removed=true;
     arrow.escape={startedAt:stamp,distance:shape.totalTravel,
-      duration:Math.min(1200,Math.max(680,440+shape.totalTravel*85))};
+      duration:Math.min(950,Math.max(560,360+shape.totalTravel*55))};
     activeEscape=arrow;
     hintedId=null;hoveredId=null;
     playSound('good');
