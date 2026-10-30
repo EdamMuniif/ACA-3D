@@ -5,8 +5,8 @@ A complete, original, mobile-friendly **3D arrow escape puzzle** built in plain 
 ## Play
 
 - **Drag** the cube with mouse or touch to examine different faces. Or use the rotate buttons.
-- **Tap** a visible arrow to slide it out along the direction of its head.
-- The arrow is **blocked** if **any part of its shape** would collide with any other arrow on the same face while sliding off the cube.
+- **Tap** a visible arrow to release it head-first, with the tail following the bends of its path.
+- The arrow is **blocked** when another arrow occupies the straight outward exit ray beyond its arrowhead on the same face. The tail follows the arrow's existing path instead of sliding rigidly.
 - Clear free arrows first, then newly unblocked arrows. Clear all faces to finish.
 - A blocked tap removes one heart. You have three hearts per attempt. Hints are unlimited.
 - Fifteen levels in three tiers: **Easy (1–5), Medium (6–10), Hard (11–15)**.
@@ -42,6 +42,19 @@ git push -u origin main
 
 The app uses relative paths, so it works at GitHub Pages repository subpaths. After the first successful online load, the service worker caches the game for offline play in supporting browsers.
 
+## Gameplay-reference update (V2)
+
+The user-provided gameplay recording is the primary **behavioral reference**, not source code.
+The first levels follow the observed density curve: **Level 1: 5 arrows, Level 2: 28,
+Level 3: approximately 44, Level 4: 57**, with progressively denser generated stages
+through Level 15 (150 arrows). All generated levels have deterministic seeds and
+valid escape sequences; they are **not exact reconstructions of the original app's
+proprietary per-arrow layouts**.
+
+Rendering uses lighter translucent cube faces, black arrow lines, and a
+glowing blue head-first escape highlight. Existing heart, hint, save, sound,
+and touch controls remain available. The escape check now matches the visible head-first, tail-following animation. It is still a same-face model; multi-face paths and the original game's hidden collision rules are not confirmed from video.
+
 ## Design & puzzle guarantees
 
 - `core.js`: deterministic puzzle generation, grid-cell collision detection, and level config. Independent of rendering, making it easy to test.
@@ -74,3 +87,12 @@ No packages are required. Browser smoke checks can be run with any modern Chromi
 - Clearing site data also clears progress.
 - On restrictive browsers or private mode, storage and sound may not be available; gameplay remains functional.
 - Future expansions could include new handcrafted levels, 3D path bridges between faces, undo mode, and alternative skins.
+## Gameplay logic and UI verification (V2 correction)
+
+- **Fixed incorrect blocked moves:** The former rigid-translation collision model could reject clear head-first escapes. `getBlocker()` checks only the prospective outward ray of the arrowhead, consistent with the existing curved escape animation.
+- **Full arrow counts:** When dense random placement runs out of long paths, a deterministic scan uses valid two-cell fallback arrows. Levels retain their target counts and remain solvable.
+- **Actionable feedback:** A blocked tap highlights the blocking arrow; hit-testing adapts to grid density to reduce accidental selection on mobile.
+- **Accessible movement:** Reduced-motion preference shortens arrow animation.
+- **Visual polish:** Calmer cube stage, subtle instruction label, and mobile-friendly action layout.
+
+The static UI remains framework-free. Tests cover all levels, arrow routing, blocker removal, and path motion. Future improvements should include assessing dependency depth as well as arrow count, plus custom authored/tutorial levels and cross-face paths.

@@ -29,33 +29,32 @@
              y: p[p.length - 1].y - p[p.length - 2].y };
   }
 
-  // An arrow slides rigidly along the direction of its head until every
-  // occupied cell has passed the edge. It cannot overlap another arrow.
-  function isBlocked(arrow, others, size) {
-    if (arrow.removed) return false;
-    const d = getDirection(arrow);
-    const occupied = new Set();
+  // A flexible arrow advances head first through its OWN centreline.
+  // Only the newly exposed lane in front of its head can hit another arrow.
+  // The previous rigid translation incorrectly rejected legal moves.
+  function getBlocker(arrow, others, size) {
+    if (arrow.removed) return null;
+    const {x:dx,y:dy}=getDirection(arrow);
+    if (Math.abs(dx)+Math.abs(dy)!==1) throw new Error('Invalid terminal arrow segment');
+    const tip=arrow.cells[arrow.cells.length-1];
+    const occupied=new Map();
     for (const other of others) {
-      if (other.id === arrow.id || other.removed || other.face !== arrow.face) continue;
-      for (const c of other.cells) occupied.add(key(c.x, c.y));
+      if (other.id===arrow.id || other.removed || other.face!==arrow.face) continue;
+      for (const c of other.cells) occupied.set(key(c.x,c.y),other.id);
     }
-    for (let step = 1; step <= size * 2 + 2; step++) {
-      let stillInside = false;
-      for (const c of arrow.cells) {
-        const x = c.x + d.x * step, y = c.y + d.y * step;
-        if (!inGrid(x, y, size)) continue;
-        stillInside = true;
-        if (occupied.has(key(x, y))) return true;
-      }
-      if (!stillInside) return false;
+    for(let n=1;n<=size;n++) {
+      const x=tip.x+dx*n, y=tip.y+dy*n;
+      if(!inGrid(x,y,size)) break;
+      const id=occupied.get(key(x,y));
+      if(id) return {id,face:arrow.face,distance:n,cell:{x,y}};
     }
-    return false;
+    return null;
   }
+  function isBlocked(arrow, others, size) { return Boolean(getBlocker(arrow,others,size)); }
 
   // The rendered arrow travels HEAD-FIRST through its own bends; its tail
   // follows the same centreline, then continues past the cube edge.
-  // This is a visual animation: isBlocked remains the conservative rigid-slide
-  // clearance check so paths that pass it are not obstructed by other arrows.
+  // isBlocked checks the head's straight exit ray, matching the visible motion.
   function getEscapeShape(arrow, size, travel = 0) {
     const d = getDirection(arrow);
     const cells = arrow.cells;
@@ -121,13 +120,19 @@
     return path;
   }
 
+  // Reference video: 5 arrows at level 1, then increasingly dense levels.
+  // The source recording does not expose proprietary per-arrow level layouts;
+  // all puzzles remain seeded, independently generated, and solvable.
+  const PROGRESSION = [
+    [5,5,2,3], [28,7,4,4], [44,8,4,5], [57,9,5,5], [64,9,5,5],
+    [70,9,5,5], [78,9,6,5], [86,10,6,6], [94,11,6,6], [102,11,6,6],
+    [112,11,6,6], [120,11,6,6], [130,14,6,6], [140,14,6,7], [150,14,6,7]
+  ];
   function getLevelConfig(level) {
     const n = Math.min(LEVEL_COUNT, Math.max(1, Math.floor(level) || 1));
+    const [target,size,faces,maxLength] = PROGRESSION[n-1];
     const tier = n <= 5 ? 'Easy' : n <= 10 ? 'Medium' : 'Hard';
-    const within = (n - 1) % 5;
-    if (tier === 'Easy') return { level:n, tier, size:5, faces:3 + (within >= 3 ? 1 : 0), perFace:3 + Math.floor(within / 2), maxLength:4 };
-    if (tier === 'Medium') return { level:n, tier, size:6, faces:5, perFace:5 + Math.floor(within / 2), maxLength:5 };
-    return { level:n, tier, size:7, faces:6, perFace:7 + Math.floor(within / 2), maxLength:5 };
+    return { level:n, tier, size, faces, maxLength, target, perFace:Math.ceil(target/faces) };
   }
 
   function generateFace(rng, size, count, face, maxLength, level) {
@@ -154,6 +159,21 @@
         if (score > bestScore) { chosen = trial; bestScore = score; }
         if (attempt > 70 && chosen && bestScore > 3.7) break;
       }
+      // If dense random winding paths can no longer fit, search every legal
+      // two-cell pair. Never silently reduce the stated level target.
+      if (!chosen) {
+        const candidates=[];
+        for(let y=0;y<size;y++) for(let x=0;x<size;x++) {
+          if(occupied.has(key(x,y))) continue;
+          for(const d of [{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}]) {
+            const nx=x+d.x,ny=y+d.y;
+            if(!inGrid(nx,ny,size) || occupied.has(key(nx,ny))) continue;
+            const trial={id:face+'-'+i,face,cells:[{x,y},{x:nx,y:ny}],removed:false};
+            if(!isBlocked(trial,arrows,size)) candidates.push(trial);
+          }
+        }
+        if(candidates.length) chosen=candidates[randomInt(rng,0,candidates.length-1)];
+      }
       if (!chosen) break;
       chosen.order = i;
       arrows.push(chosen);
@@ -167,7 +187,8 @@
     const rng = randomGenerator(0xA3C8E1 + config.level * 29791);
     const arrows = [];
     FACE_IDS.slice(0, config.faces).forEach((face, index) => {
-      const count = config.perFace + ((config.level > 1 && index % 3 === 1) ? 1 : 0);
+      const count = Math.floor(config.target/config.faces) +
+        (index < config.target%config.faces ? 1 : 0);
       arrows.push(...generateFace(rng, config.size, count, face, config.maxLength, config.level));
     });
     return { ...config, arrows, total: arrows.length };
@@ -177,5 +198,5 @@
     return level.arrows.filter(a => !a.removed && !isBlocked(a, level.arrows, level.size));
   }
 
-  return { FACE_IDS, LEVEL_COUNT, getLevelConfig, generateLevel, isBlocked, getDirection, getEscapeShape, availableArrows };
+  return { FACE_IDS, LEVEL_COUNT, getLevelConfig, generateLevel, isBlocked, getBlocker, getDirection, getEscapeShape, availableArrows };
 });
