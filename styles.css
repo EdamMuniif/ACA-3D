@@ -142,5 +142,6 @@ h1 .num { font:700 31px/1 var(--sans); letter-spacing:-.02em; font-variant-numer
 }
 @media (max-width:370px) { h1 { font-size:33px; } .dock-button span { font-size:9.5px; } .level-tile { min-height:46px; } }
 @media (max-height:640px) { .stage { min-height:240px; } .dock-button { min-height:50px; } h1 { font-size:32px; } }
+@media (max-height:520px) { .app { overflow-y:auto; } .stage { min-height:120px; } .dock-button { min-height:44px; } }
 @keyframes fade { from { opacity:0 } } @keyframes rise { from { transform:translateY(24px); opacity:0 } }
 @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms !important; transition-duration:.01ms !important; } }
