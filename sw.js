@@ -1,5 +1,5 @@
 /* Offline cache, scoped to the GitHub Pages project subdirectory. */
-const VERSION = 'arrow-cube-away-cache-v2';
+const VERSION = 'arrow-cube-away-cache-v3';
 const ASSETS = ['./', './index.html', './styles.css', './core.js', './game.js', './icon.svg', './manifest.webmanifest'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(VERSION).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting()));

@@ -173,9 +173,9 @@
     corners.slice(1).forEach(p => context.lineTo(p.x,p.y));context.closePath();
     context.save();
     context.shadowColor='rgba(25,101,150,.16)';context.shadowBlur=12;
-    context.fillStyle=face.tint;context.fill();context.restore();
+    context.globalAlpha=.33;context.fillStyle=face.tint;context.fill();context.restore();
     context.lineWidth=1.6;
-    context.strokeStyle='#a4c1d4';context.stroke();
+    context.strokeStyle='rgba(109,155,187,.65)';context.stroke();
     // Faint construction grid: helpful for understanding exact arrow clearance.
     for (let i=1;i<N;i++) {
       const off=.003;
@@ -187,7 +187,7 @@
     const insetPoints=[[inset,inset],[N-inset,inset],[N-inset,N-inset],[inset,N-inset]].map(([x,y]) => project(pointOnFace(face,x,y,1.006)));
     context.beginPath();context.moveTo(insetPoints[0].x,insetPoints[0].y);
     insetPoints.slice(1).forEach(p=>context.lineTo(p.x,p.y));context.closePath();
-    context.strokeStyle='#dceef8'; context.lineWidth=.9;context.stroke();
+    context.strokeStyle='rgba(204,227,244,.55)'; context.lineWidth=.9;context.stroke();
   }
   function drawCubeShadow() {
     const width = sceneScale*1.65;
@@ -224,6 +224,15 @@
       drawSegment(points,isBad?'#ffd0d8':isHint?'#6df1e8':'#87d9fb',width+9,isHint?.70:.60);
     }
     drawSegment(points,color,width);
+    if (motion) {
+      // Glowing blue wake, matching the reference recording's release feedback.
+      // Draw over only the leading section so the trailing body stays legible.
+      const leading = points.slice(Math.max(0,points.length-3));
+      context.save();
+      context.shadowColor='#3baafa'; context.shadowBlur=14;
+      drawSegment(leading,'#56bdff',width+3,.58);
+      context.restore();
+    }
     context.beginPath(); context.moveTo(tip.x,tip.y);context.lineTo(wing1.x,wing1.y);context.lineTo(wing2.x,wing2.y);context.closePath();
     context.fillStyle=color; context.fill();
     if (isHint) {

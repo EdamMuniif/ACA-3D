@@ -121,13 +121,19 @@
     return path;
   }
 
+  // Reference video: 5 arrows at level 1, then increasingly dense levels.
+  // The source recording does not expose proprietary per-arrow level layouts;
+  // all puzzles remain seeded, independently generated, and solvable.
+  const PROGRESSION = [
+    [5,5,2,3], [28,7,4,4], [44,8,4,5], [57,9,5,5], [64,9,5,5],
+    [70,9,5,5], [78,9,6,5], [86,10,6,6], [94,11,6,6], [102,11,6,6],
+    [112,11,6,6], [120,11,6,6], [130,14,6,6], [140,14,6,7], [150,14,6,7]
+  ];
   function getLevelConfig(level) {
     const n = Math.min(LEVEL_COUNT, Math.max(1, Math.floor(level) || 1));
+    const [target,size,faces,maxLength] = PROGRESSION[n-1];
     const tier = n <= 5 ? 'Easy' : n <= 10 ? 'Medium' : 'Hard';
-    const within = (n - 1) % 5;
-    if (tier === 'Easy') return { level:n, tier, size:5, faces:3 + (within >= 3 ? 1 : 0), perFace:3 + Math.floor(within / 2), maxLength:4 };
-    if (tier === 'Medium') return { level:n, tier, size:6, faces:5, perFace:5 + Math.floor(within / 2), maxLength:5 };
-    return { level:n, tier, size:7, faces:6, perFace:7 + Math.floor(within / 2), maxLength:5 };
+    return { level:n, tier, size, faces, maxLength, target, perFace:Math.ceil(target/faces) };
   }
 
   function generateFace(rng, size, count, face, maxLength, level) {
@@ -167,7 +173,8 @@
     const rng = randomGenerator(0xA3C8E1 + config.level * 29791);
     const arrows = [];
     FACE_IDS.slice(0, config.faces).forEach((face, index) => {
-      const count = config.perFace + ((config.level > 1 && index % 3 === 1) ? 1 : 0);
+      const count = Math.floor(config.target/config.faces) +
+        (index < config.target%config.faces ? 1 : 0);
       arrows.push(...generateFace(rng, config.size, count, face, config.maxLength, config.level));
     });
     return { ...config, arrows, total: arrows.length };

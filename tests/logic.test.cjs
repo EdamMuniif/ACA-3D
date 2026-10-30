@@ -7,7 +7,7 @@ test('all 15 levels generate deterministically and are solvable', () => {
     const first = Core.generateLevel(n);
     const second = Core.generateLevel(n);
     assert.deepEqual(first,second,`Level ${n} changed for same seed`);
-    assert.ok(first.total>=6,`Level ${n} has too few arrows`);
+    assert.equal(first.total,first.target,`Level ${n} did not reach the configured density`);
     assert.equal(first.total,first.arrows.length);
     const ids=new Set(first.arrows.map(a=>a.id));
     assert.equal(ids.size,first.arrows.length,`Level ${n} duplicate IDs`);
@@ -66,6 +66,19 @@ test('escape stays finite and head-leading at all difficulties',()=>{
         const d=motion.direction;
         assert.ok((motion.head.x-tail.x)*d.x+(motion.head.y-tail.y)*d.y >= -.000001 || t<1);
       }
+    }
+  }
+});
+
+test('video-informed reference progression is reproducible',()=>{
+  const observed = [5,28,44,57];
+  assert.deepEqual([1,2,3,4].map(n=>Core.generateLevel(n).total),observed);
+  assert.equal(Core.generateLevel(15).total,150);
+  for(let n=1;n<=15;n++){
+    const level=Core.generateLevel(n);
+    for(const arrow of level.arrows){
+      assert.ok(arrow.cells.length>=2);
+      assert.ok(arrow.cells.every(c=>c.x>=0&&c.y>=0&&c.x<level.size&&c.y<level.size));
     }
   }
 });

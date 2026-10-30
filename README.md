@@ -42,6 +42,21 @@ git push -u origin main
 
 The app uses relative paths, so it works at GitHub Pages repository subpaths. After the first successful online load, the service worker caches the game for offline play in supporting browsers.
 
+## Gameplay-reference update (V2)
+
+The user-provided gameplay recording is the primary **behavioral reference**, not source code.
+The first levels follow the observed density curve: **Level 1: 5 arrows, Level 2: 28,
+Level 3: approximately 44, Level 4: 57**, with progressively denser generated stages
+through Level 15 (150 arrows). All generated levels have deterministic seeds and
+valid escape sequences; they are **not exact reconstructions of the original app's
+proprietary per-arrow layouts**.
+
+Rendering uses lighter translucent cube faces, black arrow lines, and a
+glowing blue head-first escape highlight. Existing heart, hint, save, sound,
+and touch controls remain available. Blocking still uses a conservative
+same-face rigid-slide clearance rule; curved motion is a visual presentation,
+not a claim of matching the source app's unknown collision implementation.
+
 ## Design & puzzle guarantees
 
 - `core.js`: deterministic puzzle generation, grid-cell collision detection, and level config. Independent of rendering, making it easy to test.
