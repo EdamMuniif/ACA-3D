@@ -8,9 +8,9 @@
   <title>Arrow Cube Away — 3D Puzzle</title>
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="stylesheet" href="./styles.css?v=5">
-  <script defer src="./core.js?v=5"></script>
-  <script defer src="./game.js?v=5"></script>
+  <link rel="stylesheet" href="./styles.css?v=6">
+  <script defer src="./core.js?v=6"></script>
+  <script defer src="./game.js?v=6"></script>
 </head>
 <body>
   <div class="app-shell">
@@ -22,6 +22,8 @@
         <div><div class="brand-title">ARROW CUBE <span>AWAY</span></div><div class="brand-subtitle">3D PUZZLE · THINK / TAP / ESCAPE</div></div>
       </div>
       <div class="header-controls">
+        <button class="top-nav-btn" id="homeNavBtn" type="button">Home</button>
+        <button class="top-nav-btn" id="levelsNavBtn" type="button">Levels</button>
         <span class="offline-chip"><span class="live-dot"></span> OFFLINE READY</span>
         <button class="icon-button header-icon" id="soundBtn" aria-label="Mute sounds" title="Toggle sounds">
           <svg class="speaker-on" viewBox="0 0 24 24" fill="none"><path d="M4 9v6h4l5 4V5L8 9H4ZM17 9a5 5 0 0 1 0 6M19 6a9 9 0 0 1 0 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -31,6 +33,72 @@
       </div>
     </header>
 
+    <main class="hub-screen" id="homeScreen" aria-labelledby="homeHeading">
+      <section class="home-hero">
+        <div class="home-copy">
+          <span class="home-kicker"><span class="home-led"></span> THE 3D ESCAPE CHALLENGE</span>
+          <h1 id="homeHeading">Think ahead.<br><span>Find the way out.</span></h1>
+          <p>Rotate the cube, trace each arrow's exit and release every path in the right order. Fifteen handcrafted-feel, generated logic challenges await.</p>
+          <div class="home-actions">
+            <button type="button" class="hero-btn hero-primary" id="playBtn">▶ <span id="playBtnLabel">Start playing</span></button>
+            <button type="button" class="hero-btn hero-outline" id="pickLevelBtn">Choose a level →</button>
+          </div>
+          <p class="home-footnote">Offline-ready · Automatic progress saving · No account required</p>
+        </div>
+        <div class="hero-visual" aria-hidden="true">
+          <div class="hero-orbit orbit-one"></div><div class="hero-orbit orbit-two"></div>
+          <svg viewBox="0 0 420 380" role="presentation" class="hero-cube">
+            <defs><linearGradient id="cubeFront" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffffff"/><stop offset="1" stop-color="#d8efff"/></linearGradient><linearGradient id="cubeSide" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#aedaf4"/><stop offset="1" stop-color="#72b9e6"/></linearGradient></defs>
+            <path d="M211 40 368 121 211 207 54 121Z" fill="#eff9ff" stroke="#66b2e1" stroke-width="3"/>
+            <path d="M54 121 211 207 211 359 54 273Z" fill="url(#cubeFront)" stroke="#66b2e1" stroke-width="3"/>
+            <path d="M211 207 368 121 368 273 211 359Z" fill="url(#cubeSide)" stroke="#4aa1d7" stroke-width="3"/>
+            <path d="M95 163 143 188 143 265 168 279 M161 257 168 279 145 282" fill="none" stroke="#163a5a" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M260 218 320 187 320 248 263 279 M287 252 263 279 297 284" fill="none" stroke="#163a5a" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M137 124 185 97 236 124 289 97 M263 97 289 97 281 120" fill="none" stroke="#116bd7" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="floating-tag tag-one">↗ PLAN</span><span class="floating-tag tag-two">✦ ESCAPE</span>
+        </div>
+      </section>
+      <section class="home-bottom" aria-label="Player progress and rules">
+        <div class="profile-card">
+          <div class="section-kicker">PLAYER PROFILE</div>
+          <h2>Ready, <span id="homePlayerGreeting">Player</span>?</h2>
+          <label for="playerNameInput">Your name</label>
+          <div class="name-entry"><input id="playerNameInput" maxlength="24" autocomplete="nickname" placeholder="Enter your name" value="Player"><button id="saveNameBtn" type="button">Save</button></div>
+          <p>Your name and score stay on this device.</p>
+        </div>
+        <div class="home-stats-card">
+          <div class="section-kicker">YOUR PROGRESS</div>
+          <div class="home-stats-grid">
+            <div><strong id="homePoints">0</strong><span>TOTAL POINTS</span></div>
+            <div><strong id="homeCompleted">0 / 15</strong><span>LEVELS CLEARED</span></div>
+            <div><strong id="homeNextLevel">01</strong><span>HIGHEST UNLOCKED</span></div>
+          </div>
+          <div class="home-progress-rail"><span id="homeProgressFill"></span></div>
+        </div>
+        <div class="rules-card">
+          <div class="section-kicker">HOW IT WORKS</div>
+          <h2>Four quick rules</h2>
+          <p><b>01</b> Rotate the cube to inspect all faces.</p>
+          <p><b>02</b> Tap only an arrow with a clear exit.</p>
+          <p><b>03</b> Three hearts per attempt. Hints lower your score.</p>
+          <p><b>04</b> Clear the cube to earn points and unlock the next level.</p>
+        </div>
+      </section>
+    </main>
+
+    <main class="hub-screen level-hub" id="levelsScreen" aria-labelledby="levelsHeading" hidden>
+      <div class="level-hub-heading">
+        <div><div class="section-kicker">THE LEVEL MAP</div><h1 id="levelsHeading">Choose your challenge.</h1><p>Complete levels to unlock the next stage. Replay cleared levels to improve your best score.</p></div>
+        <button type="button" id="levelBackBtn" class="hero-btn hero-outline">← Back home</button>
+      </div>
+      <div class="level-hub-stats"><span id="levelPlayerLabel">Player</span><span><b id="levelPointsLabel">0</b> points</span><span><b id="levelUnlockedLabel">1</b> unlocked</span></div>
+      <section class="level-hub-group"><div class="level-group-heading"><span class="level-group-dot easy"></span><h2>Easy</h2><p>Levels 01–05</p></div><div class="level-hub-grid" id="easyLevelsScreen"></div></section>
+      <section class="level-hub-group"><div class="level-group-heading"><span class="level-group-dot medium"></span><h2>Medium</h2><p>Levels 06–10</p></div><div class="level-hub-grid" id="mediumLevelsScreen"></div></section>
+      <section class="level-hub-group"><div class="level-group-heading"><span class="level-group-dot hard"></span><h2>Hard</h2><p>Levels 11–15</p></div><div class="level-hub-grid" id="hardLevelsScreen"></div></section>
+    </main>
+
+    <div id="playScreen" hidden>
     <main class="game-layout">
       <section class="play-panel" aria-label="3D puzzle game">
         <div class="game-hud">
@@ -39,6 +107,7 @@
             <div class="level-row"><h1 id="levelTitle">Level 01</h1><span class="level-count" id="levelFraction">01 / 15</span></div>
           </div>
           <div class="hud-right">
+            <span class="player-score-line"><span id="hudPlayerName">Player</span> · <strong id="hudPoints">0</strong> pts</span>
             <div class="hearts" id="hearts" aria-label="3 hearts remaining"><span>♥</span><span>♥</span><span>♥</span></div>
             <div class="arrow-counter"><span class="arrow-counter-icon">↗</span> <strong id="remainingCount">0</strong><span class="counter-label"> LEFT</span></div>
           </div>
@@ -79,6 +148,7 @@
         <div class="side-card tips-card"><div class="card-eyebrow">QUICK RULES</div><div class="tip"><span class="tip-num">01</span><span>Drag the cube to see all six sides.</span></div><div class="tip"><span class="tip-num">02</span><span>Tap an arrow with an unobstructed exit path.</span></div><div class="tip"><span class="tip-num">03</span><span>A blocked move costs one heart.</span></div><div class="tip"><span class="tip-num">04</span><span>Clear every arrow to win the level.</span></div></div>
       </aside>
     </main>
+    </div>
     <footer class="page-footer"><span>ARROW CUBE AWAY <span class="footer-spark">✳</span> ORIGINAL 3D LOGIC PUZZLE</span><span>NO ADS · NO ACCOUNTS · NO INTERNET REQUIRED</span></footer>
   </div>
 
