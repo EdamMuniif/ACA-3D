@@ -8,9 +8,9 @@
   <title>Arrow Cube Away — 3D Puzzle</title>
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="stylesheet" href="./styles.css">
-  <script defer src="./core.js"></script>
-  <script defer src="./game.js"></script>
+  <link rel="stylesheet" href="./styles.css?v=5">
+  <script defer src="./core.js?v=5"></script>
+  <script defer src="./game.js?v=5"></script>
 </head>
 <body>
   <div class="app-shell">
@@ -83,6 +83,23 @@
   </div>
 
   <div class="modal-backdrop hidden" id="modal" role="presentation"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><button class="modal-close" id="modalClose" aria-label="Close">×</button><div id="modalIcon" class="modal-icon">✦</div><div id="modalEyebrow" class="modal-eyebrow">PUZZLE COMPLETE</div><h2 id="modalTitle">Level cleared!</h2><p id="modalMessage">Well played.</p><div id="modalStats" class="modal-stats"></div><div id="modalExtra"></div><div class="modal-buttons" id="modalButtons"></div></div></div>
-  <script>if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) { window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {})); }</script>
+  <script>
+    if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+      window.addEventListener('load', async () => {
+        const alreadyControlled = Boolean(navigator.serviceWorker.controller);
+        let refreshed = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (alreadyControlled && !refreshed) {
+            refreshed = true;
+            location.reload();
+          }
+        });
+        try {
+          const registration = await navigator.serviceWorker.register('./sw.js', { updateViaCache:'none' });
+          await registration.update();
+        } catch (error) { console.warn('Offline cache could not update:', error); }
+      });
+    }
+  </script>
 </body>
 </html>

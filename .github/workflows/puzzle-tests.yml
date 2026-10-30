@@ -5,6 +5,8 @@ on:
     paths:
       - "core.js"
       - "game.js"
+      - "sw.js"
+      - "index.html"
       - "tests/**"
       - ".github/workflows/puzzle-tests.yml"
   push:
@@ -12,6 +14,8 @@ on:
     paths:
       - "core.js"
       - "game.js"
+      - "sw.js"
+      - "index.html"
       - "tests/**"
       - ".github/workflows/puzzle-tests.yml"
 
@@ -30,5 +34,6 @@ jobs:
         run: |
           node --check core.js
           node --check game.js
+          node --check sw.js
       - name: Level and collision regression tests
-        run: node --test tests/logic.test.cjs
+        run: node --test tests/*.test.cjs
