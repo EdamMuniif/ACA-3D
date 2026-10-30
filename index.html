@@ -3,86 +3,91 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0c2343">
-  <meta name="description" content="Arrow Cube Away — rotate a 3D cube, find free arrows, and solve 15 logic puzzles from easy to hard. Play offline.">
+  <meta name="theme-color" content="#F3EEE3">
+  <meta name="description" content="Arrow Cube Away — turn a glass cube, find the arrows with a clear lane, and tap them out in the right order. 15 logic puzzles, offline.">
   <title>Arrow Cube Away — 3D Puzzle</title>
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
   <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="preload" href="./fonts/InstrumentSans-Regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="./fonts/InstrumentSerif-Regular.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="./styles.css">
   <script defer src="./core.js"></script>
   <script defer src="./game.js"></script>
 </head>
 <body>
-  <div class="app-shell">
-    <header class="topbar">
-      <div class="brand" aria-label="Arrow Cube Away 3D Puzzle">
-        <div class="brand-icon" aria-hidden="true">
-          <svg viewBox="0 0 42 42" fill="none"><path d="M21 3 37 12v18l-16 9L5 30V12L21 3Z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><path d="m5 12 16 10 16-10M21 22v17" stroke="currentColor" stroke-width="2.5"/><path d="m13 14 8-5 8 5M26 27l5-3v6" stroke="#53D9EF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
-        <div><div class="brand-title">ARROW CUBE <span>AWAY</span></div><div class="brand-subtitle">3D PUZZLE · THINK / TAP / ESCAPE</div></div>
+  <div class="app">
+    <header class="bar">
+      <button class="icon-button" id="menuBtn" aria-label="Choose a level" title="Levels">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="4" y="4" width="6" height="6" rx="1.2"/><rect x="14" y="4" width="6" height="6" rx="1.2"/><rect x="4" y="14" width="6" height="6" rx="1.2"/><rect x="14" y="14" width="6" height="6" rx="1.2"/></svg>
+      </button>
+      <div class="bar-title">
+        <div class="eyebrow"><span id="difficultyTag" class="difficulty-tag easy">EASY</span><span class="dot" aria-hidden="true"></span><span id="levelFraction">01 / 15</span></div>
+        <h1 id="levelTitle"><em>Level</em> 01</h1>
       </div>
-      <div class="header-controls">
-        <span class="offline-chip"><span class="live-dot"></span> OFFLINE READY</span>
-        <button class="icon-button header-icon" id="soundBtn" aria-label="Mute sounds" title="Toggle sounds">
-          <svg class="speaker-on" viewBox="0 0 24 24" fill="none"><path d="M4 9v6h4l5 4V5L8 9H4ZM17 9a5 5 0 0 1 0 6M19 6a9 9 0 0 1 0 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <svg class="speaker-off" viewBox="0 0 24 24" fill="none"><path d="M4 9v6h4l5 4V5L8 9H4ZM17 9l5 6m0-6-5 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div class="bar-actions">
+        <button class="icon-button" id="soundBtn" aria-label="Mute sounds" title="Sound">
+          <svg class="speaker-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4Z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg>
+          <svg class="speaker-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4Z"/><path d="m16 9.5 5 5m0-5-5 5"/></svg>
         </button>
-        <button class="icon-button header-icon" id="settingsBtn" aria-label="Game settings" title="Settings"><svg viewBox="0 0 24 24" fill="none"><path d="M10 3h4l.7 2.2 1.7.7 2.1-1 2.8 2.8-1 2.1.7 1.7 2.2.7v4l-2.2.7-.7 1.7 1 2.1-2.8 2.8-2.1-1-1.7.7L14 23h-4l-.7-2.2-1.7-.7-2.1 1-2.8-2.8 1-2.1-.7-1.7L1 14v-4l2.2-.7.7-1.7-1-2.1 2.8-2.8 2.1 1 1.7-.7L10 3Z" stroke="currentColor" stroke-width="1.7" transform="translate(0 -1) scale(.95)"/><circle cx="12" cy="11.8" r="3.2" stroke="currentColor" stroke-width="1.8"/></svg></button>
+        <button class="icon-button" id="settingsBtn" aria-label="Settings" title="Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 7h9M18 7h1M5 17h1M10 17h9"/><circle cx="16" cy="7" r="2.1"/><circle cx="8" cy="17" r="2.1"/></svg>
+        </button>
       </div>
     </header>
 
-    <main class="game-layout">
-      <section class="play-panel" aria-label="3D puzzle game">
-        <div class="game-hud">
-          <div class="level-information">
-            <div class="eyebrow">CURRENT CHALLENGE <span class="mini-dash"></span> <span id="difficultyTag" class="difficulty-tag">EASY</span></div>
-            <div class="level-row"><h1 id="levelTitle">Level 01</h1><span class="level-count" id="levelFraction">01 / 15</span></div>
-          </div>
-          <div class="hud-right">
-            <div class="hearts" id="hearts" aria-label="3 hearts remaining"><span>♥</span><span>♥</span><span>♥</span></div>
-            <div class="arrow-counter"><span class="arrow-counter-icon">↗</span> <strong id="remainingCount">0</strong><span class="counter-label"> LEFT</span></div>
-          </div>
-        </div>
-        <div class="progress-track" role="progressbar" id="progressTrack" aria-label="Arrows cleared" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"><div class="progress-fill" id="progressFill"></div></div>
-        <div class="stage" id="stage">
-          <div class="stage-glow"></div>
-          <div class="scene-top-note"><span class="pulse-point"></span> <span id="stageNote">DRAG TO ROTATE · TAP AN ARROW TO ESCAPE</span></div>
-          <canvas id="gameCanvas" aria-label="Rotatable 3D arrow cube. Drag to rotate. Tap an arrow to release it." tabindex="0"></canvas>
-          <div class="compass" aria-hidden="true"><span class="compass-cross">✦</span><span>360° VIEW</span></div>
-          <div class="stage-toast" id="toast" role="status" aria-live="polite"></div>
-          <div class="stage-bottom-note">DRAG <span class="tiny-arrow">↔</span> ROTATE <span class="note-dot">·</span> TAP <span class="tiny-arrow">↗</span> RELEASE</div>
-        </div>
-        <div class="game-actions">
-          <button class="game-button secondary" id="rotateLeftBtn" title="Rotate cube left"><span class="button-icon">↶</span> Left</button>
-          <button class="game-button secondary" id="rotateRightBtn" title="Rotate cube right"><span class="button-icon">↷</span> Right</button>
-          <button class="game-button secondary reset-button" id="resetBtn" title="Restart this level"><span class="button-icon">⟲</span> Restart</button>
-          <button class="game-button primary" id="hintBtn"><span class="button-icon">✧</span> Get Hint</button>
-        </div>
-      </section>
+    <section class="meter" aria-label="Progress">
+      <div class="hearts" id="hearts" aria-label="3 hearts remaining"></div>
+      <div class="progress-track" role="progressbar" id="progressTrack" aria-label="Arrows cleared" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="remaining"><strong id="remainingCount">0</strong><span>left</span></div>
+    </section>
 
-      <aside class="sidebar" aria-label="Level selection and game instructions">
-        <div class="side-card overview-card">
-          <div class="card-eyebrow">THE OBJECTIVE</div>
-          <h2>Find the way <em>out.</em></h2>
-          <p>Every arrow needs a clear exit. Move the free ones first to unlock the rest.</p>
-          <div class="stat-grid"><div class="stat-tile"><strong id="statSolved">00</strong><span>PUZZLES WON</span></div><div class="stat-tile"><strong>15</strong><span>TOTAL LEVELS</span></div></div>
-        </div>
-        <div class="side-card level-card">
-          <div class="card-heading"><div><div class="card-eyebrow">YOUR JOURNEY</div><h2>Choose a level</h2></div><span class="card-heading-icon">▦</span></div>
-          <div class="tier-heading"><span class="tier-marker easy"></span> EASY <span>01 — 05</span></div>
-          <div class="level-grid" id="easyLevels"></div>
-          <div class="tier-heading"><span class="tier-marker medium"></span> MEDIUM <span>06 — 10</span></div>
-          <div class="level-grid" id="mediumLevels"></div>
-          <div class="tier-heading"><span class="tier-marker hard"></span> HARD <span>11 — 15</span></div>
-          <div class="level-grid" id="hardLevels"></div>
-        </div>
-        <div class="side-card tips-card"><div class="card-eyebrow">QUICK RULES</div><div class="tip"><span class="tip-num">01</span><span>Drag the cube to see all six sides.</span></div><div class="tip"><span class="tip-num">02</span><span>Tap an arrow with an unobstructed exit path.</span></div><div class="tip"><span class="tip-num">03</span><span>A blocked move costs one heart.</span></div><div class="tip"><span class="tip-num">04</span><span>Clear every arrow to win the level.</span></div></div>
-      </aside>
+    <main class="stage" id="stage" aria-label="3D puzzle game">
+      <canvas id="gameCanvas" aria-label="Rotatable glass cube covered in arrows. Drag to rotate. Tap an arrow to release it." tabindex="0"></canvas>
+      <div class="stage-note"><span id="stageNote">DRAG TO TURN · TAP AN ARROW</span></div>
+      <div class="stage-toast" id="toast" role="status" aria-live="polite"></div>
     </main>
-    <footer class="page-footer"><span>ARROW CUBE AWAY <span class="footer-spark">✳</span> ORIGINAL 3D LOGIC PUZZLE</span><span>NO ADS · NO ACCOUNTS · NO INTERNET REQUIRED</span></footer>
+
+    <nav class="dock" aria-label="Game controls">
+      <button class="dock-button" id="rotateLeftBtn" title="Turn the cube left">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 7 5 11l4 4"/><path d="M5 11h8a6 6 0 0 1 6 6v1"/></svg><span>Left</span>
+      </button>
+      <button class="dock-button" id="rotateRightBtn" title="Turn the cube right">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m15 7 4 4-4 4"/><path d="M19 11h-8a6 6 0 0 0-6 6v1"/></svg><span>Right</span>
+      </button>
+      <button class="dock-button" id="lanesBtn" aria-pressed="false" title="Show every arrow's exit lane">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13M14 5l3 3-3 3"/><path d="M4 16h8" stroke-dasharray="2 3"/><path d="M4 12h16" opacity=".35"/></svg><span>Lanes</span>
+      </button>
+      <button class="dock-button" id="resetBtn" title="Restart this level">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12a7 7 0 1 0 2.3-5.2"/><path d="M5 5v4h4"/></svg><span>Restart</span>
+      </button>
+      <button class="dock-button dock-primary" id="hintBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3Z"/></svg><span>Hint</span>
+      </button>
+    </nav>
   </div>
 
-  <div class="modal-backdrop hidden" id="modal" role="presentation"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><button class="modal-close" id="modalClose" aria-label="Close">×</button><div id="modalIcon" class="modal-icon">✦</div><div id="modalEyebrow" class="modal-eyebrow">PUZZLE COMPLETE</div><h2 id="modalTitle">Level cleared!</h2><p id="modalMessage">Well played.</p><div id="modalStats" class="modal-stats"></div><div id="modalExtra"></div><div class="modal-buttons" id="modalButtons"></div></div></div>
+  <!-- Level sheet -->
+  <div class="sheet-backdrop hidden" id="sheet" role="presentation">
+    <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+      <header class="sheet-head">
+        <div><div class="eyebrow">YOUR JOURNEY · <span id="statSolved">00</span> / 15 SOLVED</div><h2 id="sheetTitle">Choose a level</h2></div>
+        <button class="icon-button" id="sheetClose" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg>
+        </button>
+      </header>
+      <div class="tier-heading"><span class="tier-marker easy"></span>EASY<span>01 — 05</span></div>
+      <div class="level-grid" id="easyLevels"></div>
+      <div class="tier-heading"><span class="tier-marker medium"></span>MEDIUM<span>06 — 10</span></div>
+      <div class="level-grid" id="mediumLevels"></div>
+      <div class="tier-heading"><span class="tier-marker hard"></span>HARD<span>11 — 15</span></div>
+      <div class="level-grid" id="hardLevels"></div>
+      <p class="sheet-foot">An arrow can leave when the line in front of its head is empty. Offline, no accounts.</p>
+    </section>
+  </div>
+
+  <!-- Dialogs -->
+  <div class="modal-backdrop hidden" id="modal" role="presentation"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><button class="icon-button modal-close" id="modalClose" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg></button><div id="modalIcon" class="modal-icon">✦</div><div id="modalEyebrow" class="modal-eyebrow">PUZZLE COMPLETE</div><h2 id="modalTitle">Level cleared!</h2><p id="modalMessage">Well played.</p><div id="modalStats" class="modal-stats"></div><div id="modalExtra"></div><div class="modal-buttons" id="modalButtons"></div></div></div>
   <script>if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) { window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {})); }</script>
 </body>
 </html>
