@@ -23,14 +23,41 @@ test('all 15 levels generate deterministically and are solvable', () => {
   }
 });
 
-test('collision checks the complete translated shape, not just arrow tip', () => {
+test('blocking looks only at the cells in front of the head (what you see is what is enforced)', () => {
+  // Head at (1,2) pointing down. Its ray is (1,3),(1,4).
   const a={id:'a',face:'front',cells:[{x:0,y:1},{x:1,y:1},{x:1,y:2}]};
-  const blocker={id:'b',face:'front',cells:[{x:0,y:3},{x:1,y:3}]};
-  assert.equal(Core.isBlocked(a,[a,blocker],5),true);
-  blocker.face='back';
-  assert.equal(Core.isBlocked(a,[a,blocker],5),false);
-  blocker.face='front';blocker.removed=true;
-  assert.equal(Core.isBlocked(a,[a,blocker],5),false);
+  const ahead={id:'b',face:'front',cells:[{x:0,y:3},{x:1,y:3}]};
+  assert.equal(Core.isBlocked(a,[a,ahead],5),true);
+  assert.equal(Core.findBlocker(a,[a,ahead],5).blocker.id,'b');
+  assert.deepEqual(Core.findBlocker(a,[a,ahead],5).ray,[{x:1,y:3}]);
+  // Same board, other face, or already removed: not blocking.
+  ahead.face='back';  assert.equal(Core.isBlocked(a,[a,ahead],5),false);
+  ahead.face='front'; ahead.removed=true; assert.equal(Core.isBlocked(a,[a,ahead],5),false);
+});
+
+test('an arrow beside or behind the head never blocks it (the old rigid rule wrongly did)', () => {
+  const a={id:'a',face:'front',cells:[{x:0,y:1},{x:1,y:1},{x:1,y:2}]};
+  const beside={id:'c',face:'front',cells:[{x:0,y:3},{x:0,y:4}]};   // only under the tail's lane
+  assert.equal(Core.isRigidBlocked(a,[a,beside],5),true,'old rule rejects it');
+  assert.equal(Core.isBlocked(a,[a,beside],5),false,'head ray is clear, so it must escape');
+});
+
+test('every level is solvable under the head-ray rule and has real depth', () => {
+  const minDepth={Easy:3,Medium:5,Hard:7};
+  for (let n=1;n<=15;n++) {
+    const level=Core.generateLevel(n);
+    assert.ok(level.depth>=minDepth[level.tier],`Level ${n} depth ${level.depth} is too shallow for ${level.tier}`);
+    assert.equal(Core.dependencyDepth(level),level.depth);
+    // Whatever the player can see as free must be accepted, at every step of play.
+    while (level.arrows.some(a=>!a.removed)) {
+      const visuallyFree=level.arrows.filter(a=>!a.removed && Core.headRay(a,level.size)
+        .every(c=>!level.arrows.some(o=>o!==a&&!o.removed&&o.face===a.face&&o.cells.some(k=>k.x===c.x&&k.y===c.y))));
+      const accepted=Core.availableArrows(level);
+      assert.deepEqual(accepted.map(a=>a.id).sort(),visuallyFree.map(a=>a.id).sort(),`Level ${n}: visible exit disagrees with rule`);
+      assert.ok(accepted.length,`Level ${n} got stuck`);
+      accepted.forEach(a=>{a.removed=true;});
+    }
+  }
 });
 
 test('difficulty increases, level bounds are clamped',()=>{

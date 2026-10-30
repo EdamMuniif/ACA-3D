@@ -29,9 +29,41 @@
              y: p[p.length - 1].y - p[p.length - 2].y };
   }
 
-  // An arrow slides rigidly along the direction of its head until every
-  // occupied cell has passed the edge. It cannot overlap another arrow.
-  function isBlocked(arrow, others, size) {
+  // RULE (what you see is what is enforced): an arrow escapes head-first along
+  // its own body, then straight out in the direction of its arrowhead. So it is
+  // blocked only if another live arrow sits on a cell in FRONT of its head, on
+  // the same face, before the cube edge. Cells behind or beside the head never
+  // matter, which matches the escape animation exactly.
+  function headRay(arrow, size) {
+    const d = getDirection(arrow);
+    const head = arrow.cells[arrow.cells.length - 1];
+    const ray = [];
+    let x = head.x + d.x, y = head.y + d.y;
+    while (inGrid(x, y, size)) { ray.push({ x, y }); x += d.x; y += d.y; }
+    return ray;
+  }
+
+  // Returns null when the arrow is free, else { blocker, at, ray } where ray is
+  // the run of cells from the head up to and including the first blocked cell.
+  function findBlocker(arrow, others, size) {
+    if (arrow.removed) return null;
+    const owner = new Map();
+    for (const other of others) {
+      if (other.id === arrow.id || other.removed || other.face !== arrow.face) continue;
+      for (const c of other.cells) owner.set(key(c.x, c.y), other);
+    }
+    const ray = headRay(arrow, size);
+    for (let i = 0; i < ray.length; i++) {
+      const hit = owner.get(key(ray[i].x, ray[i].y));
+      if (hit) return { blocker: hit, at: ray[i], ray: ray.slice(0, i + 1) };
+    }
+    return null;
+  }
+
+  function isBlocked(arrow, others, size) { return findBlocker(arrow, others, size) !== null; }
+
+  // The old, stricter rule (whole body slides rigidly). Kept for tests only.
+  function isRigidBlocked(arrow, others, size) {
     if (arrow.removed) return false;
     const d = getDirection(arrow);
     const occupied = new Set();
@@ -54,8 +86,8 @@
 
   // The rendered arrow travels HEAD-FIRST through its own bends; its tail
   // follows the same centreline, then continues past the cube edge.
-  // This is a visual animation: isBlocked remains the conservative rigid-slide
-  // clearance check so paths that pass it are not obstructed by other arrows.
+  // The animation sweeps only the arrow's own cells plus its head ray, which is
+  // exactly the region isBlocked inspects.
   function getEscapeShape(arrow, size, travel = 0) {
     const d = getDirection(arrow);
     const cells = arrow.cells;
@@ -162,9 +194,28 @@
     return arrows;
   }
 
-  function generateLevel(level) {
-    const config = getLevelConfig(level);
-    const rng = randomGenerator(0xA3C8E1 + config.level * 29791);
+  // Dependency depth: how many "waves" it takes to clear the board when every
+  // free arrow is removed at once. More waves means longer chains of "A must go
+  // before B", i.e. a deeper puzzle. Does not mutate the level.
+  function dependencyDepth(level) {
+    const arrows = level.arrows.map(a => ({ ...a, removed: false }));
+    let waves = 0;
+    while (arrows.some(a => !a.removed)) {
+      const free = arrows.filter(a => !a.removed && !isBlocked(a, arrows, level.size));
+      if (!free.length) return -1;
+      for (const a of free) a.removed = true;
+      waves++;
+    }
+    return waves;
+  }
+
+  // The head-ray rule frees more arrows than the old rigid rule, so each level
+  // is generated from several fixed seeds and the deepest board is kept.
+  // Still fully deterministic: the same level number always gives the same board.
+  const ATTEMPTS = { Easy: 5, Medium: 7, Hard: 8 };
+
+  function buildOnce(config, attempt) {
+    const rng = randomGenerator((0xA3C8E1 + config.level * 29791 + attempt * 7919) >>> 0);
     const arrows = [];
     FACE_IDS.slice(0, config.faces).forEach((face, index) => {
       const count = config.perFace + ((config.level > 1 && index % 3 === 1) ? 1 : 0);
@@ -173,9 +224,22 @@
     return { ...config, arrows, total: arrows.length };
   }
 
+  function generateLevel(level) {
+    const config = getLevelConfig(level);
+    let best = null;
+    for (let attempt = 0; attempt < ATTEMPTS[config.tier]; attempt++) {
+      const candidate = buildOnce(config, attempt);
+      candidate.depth = dependencyDepth(candidate);
+      if (candidate.depth < 0) continue;
+      if (!best || candidate.depth > best.depth ||
+          (candidate.depth === best.depth && candidate.total > best.total)) best = candidate;
+    }
+    return best;
+  }
+
   function availableArrows(level) {
     return level.arrows.filter(a => !a.removed && !isBlocked(a, level.arrows, level.size));
   }
 
-  return { FACE_IDS, LEVEL_COUNT, getLevelConfig, generateLevel, isBlocked, getDirection, getEscapeShape, availableArrows };
+  return { FACE_IDS, LEVEL_COUNT, getLevelConfig, generateLevel, dependencyDepth, isBlocked, isRigidBlocked, findBlocker, headRay, getDirection, getEscapeShape, availableArrows };
 });

@@ -22,10 +22,10 @@
     try {
       const parsed = JSON.parse(localStorage.getItem(PERSIST_KEY));
       if (!parsed || typeof parsed !== 'object') return { ...base };
-      const completed = Array.isArray(parsed.completed) ? parsed.completed.filter(n => Number.isInteger(n) && n >= 1 && n <= 15) : [];
+      const completed = Array.isArray(parsed.completed) ? parsed.completed.filter(n => Number.isInteger(n) && n >= 1 && n <= Core.LEVEL_COUNT) : [];
       return {
-        unlocked:Math.min(15,Math.max(1,Number(parsed.unlocked) || 1)),
-        lastLevel:Math.min(15,Math.max(1,Number(parsed.lastLevel) || 1)),
+        unlocked:Math.min(Core.LEVEL_COUNT,Math.max(1,Number(parsed.unlocked) || 1)),
+        lastLevel:Math.min(Core.LEVEL_COUNT,Math.max(1,Number(parsed.lastLevel) || 1)),
         completed:[...new Set(completed)],
         sound:parsed.sound !== false,
         colorful:parsed.colorful === true
@@ -42,6 +42,7 @@
   let drag = null;
   let hoveredId = null;
   let hintedId = null, hintExpiry = 0;
+  let blockFeedback = null; // { arrowId, blockerId, tip, end, until } shown after a blocked tap
   let selectedPoints = [];
   let modalOpen = false;
   let lastToastTimer = 0;
@@ -87,7 +88,7 @@
 
   function updateHUD() {
     $('levelTitle').textContent = `Level ${String(currentLevel).padStart(2,'0')}`;
-    $('levelFraction').textContent = `${String(currentLevel).padStart(2,'0')} / 15`;
+    $('levelFraction').textContent = `${String(currentLevel).padStart(2,'0')} / ${Core.LEVEL_COUNT}`;
     $('difficultyTag').textContent = level.tier.toUpperCase();
     $('difficultyTag').className = 'difficulty-tag ' + level.tier.toLowerCase();
     $('hearts').innerHTML = Array.from({length:3},(_,i) => `<span class="${i < hearts ? '' : 'lost'}" aria-hidden="true">♥</span>`).join('');
@@ -129,7 +130,7 @@
     persist();
     level = Core.generateLevel(currentLevel);
     hearts = 3;
-    hoveredId = null; hintedId = null;
+    hoveredId = null; hintedId = null; blockFeedback = null;
     yaw = -.66; pitch = .43; desiredYaw = yaw;
     $('toast').classList.remove('visible');
     hideModal();
@@ -223,6 +224,15 @@
     if (isHint || isHover || isBad) {
       drawSegment(points,isBad?'#ffd0d8':isHint?'#6df1e8':'#87d9fb',width+9,isHint?.70:.60);
     }
+    const fb = blockFeedback && time < blockFeedback.until ? blockFeedback : null;
+    if (fb && arrow.id===fb.arrowId) {
+      // Show exactly why: the straight run in front of the head, ending on the arrow in the way.
+      const pulse = .75 + .25*Math.sin(time*.016);
+      const run = [head(headPos.x,headPos.y),head(fb.end.x+.5,fb.end.y+.5)];
+      context.save(); context.setLineDash([7,6]);
+      drawSegment(run,'#e9506b',width+1.5,pulse); context.restore();
+    }
+    if (fb && arrow.id===fb.blockerId) drawSegment(points,'#f2a65a',width+8,.55+.25*Math.sin(time*.016));
     drawSegment(points,color,width);
     context.beginPath(); context.moveTo(tip.x,tip.y);context.lineTo(wing1.x,wing1.y);context.lineTo(wing2.x,wing2.y);context.closePath();
     context.fillStyle=color; context.fill();
@@ -342,13 +352,15 @@
     if (Core.isBlocked(arrow,level.arrows,level.size)) {
       hearts--;
       arrow.badUntil=stamp+620;
+      const why=Core.findBlocker(arrow,level.arrows,level.size);
+      if (why) blockFeedback={arrowId:arrow.id,blockerId:why.blocker.id,end:why.at,until:stamp+1400};
       playSound('bad');
       updateHUD();
       if (hearts===0) {
         setToast('No hearts left. Try again.','warning');
         const generation=activeGeneration;
         setTimeout(()=>{if(generation===activeGeneration) showLossModal();},550);
-      } else setToast('Blocked! Clear another arrow first.','warning');
+      } else setToast('Blocked by the orange arrow.','warning');
       return;
     }
     const shape=Core.getEscapeShape(arrow,level.size);
@@ -362,7 +374,7 @@
   }
   function finishLevel() {
     if (!progress.completed.includes(currentLevel)) progress.completed.push(currentLevel);
-    progress.unlocked=Math.min(15,Math.max(progress.unlocked,currentLevel+1));
+    progress.unlocked=Math.min(Core.LEVEL_COUNT,Math.max(progress.unlocked,currentLevel+1));
     persist();updateHUD();renderLevels();
     showWinModal();
   }
@@ -414,7 +426,7 @@
   }
   function showWinModal() {
     playSound('win');
-    const final=currentLevel===15;
+    const final=currentLevel===Core.LEVEL_COUNT;
     openModal({ icon:'✦',eyebrow:final?'ALL CHALLENGES COMPLETE':'PUZZLE COMPLETE',
       title:final?'Cube master!':'Level cleared!',
       message:final?'You completed every Easy, Medium, and Hard challenge. All levels are now replayable.':'Every arrow escaped. Your next puzzle is ready.',
@@ -458,7 +470,7 @@
     const help=$('modalExtra');
     for (const [title,description] of [
       ['01 · Rotate','Drag left/right/up/down to inspect every side. You can use the Left / Right buttons too.'],
-      ['02 · Check the exit','Each arrow moves head-first along its path, then out in the direction of its arrowhead. Its exit must be clear of other arrows on that face.'],
+      ['02 · Check the exit','An arrow leaves head-first, straight in the direction its arrowhead points. If nothing is in that line ahead of the head, it can go. Only the line in front matters.'],
       ['03 · Release','Tap a clear arrow to slide it away. A blocked tap loses one heart, but a hint is free.'],
       ['04 · Complete','Remove all arrows on every side to unlock the next level. Your progress saves automatically on this device.']
     ]) {const p=document.createElement('p');p.className='help-copy';const strong=document.createElement('strong');strong.textContent=title+' — ';p.append(strong,document.createTextNode(description));help.appendChild(p);}

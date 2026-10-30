@@ -6,7 +6,7 @@ A complete, original, mobile-friendly **3D arrow escape puzzle** built in plain 
 
 - **Drag** the cube with mouse or touch to examine different faces. Or use the rotate buttons.
 - **Tap** a visible arrow to slide it out along the direction of its head.
-- The arrow is **blocked** if **any part of its shape** would collide with any other arrow on the same face while sliding off the cube.
+- An arrow is **blocked** only if another arrow sits in the straight line **in front of its head** on the same face. What you see is what is enforced: if the lane ahead of the head is clear, it escapes.
 - Clear free arrows first, then newly unblocked arrows. Clear all faces to finish.
 - A blocked tap removes one heart. You have three hearts per attempt. Hints are unlimited.
 - Fifteen levels in three tiers: **Easy (1–5), Medium (6–10), Hard (11–15)**.
@@ -44,12 +44,12 @@ The app uses relative paths, so it works at GitHub Pages repository subpaths. Af
 
 ## Design & puzzle guarantees
 
-- `core.js`: deterministic puzzle generation, grid-cell collision detection, and level config. Independent of rendering, making it easy to test.
+- `core.js`: deterministic puzzle generation (best of several seeds, scored by dependency depth), head-ray blocking, and level config. Independent of rendering, making it easy to test.
 - `game.js`: perspective-projected 3D cube, touch/mouse rotation, arrow picking, animation, hearts, hints, level navigation, settings, and save data.
 - `styles.css` and `index.html`: responsive user interface.
 - `sw.js`: static offline caching (registered over HTTP(S), not `file://`).
 
-Each generated arrow is admitted only if it can escape **with all previously placed arrows present**. Consequently, removing arrows in reverse insertion order is always a valid solution. This makes every generated level solvable, without relying on random player guessing. Faces can be solved independently; arrow collisions don't extend between distinct cube faces.
+Each generated arrow is admitted only if its head ray is clear **with all previously placed arrows present**. Consequently, removing arrows in reverse insertion order is always a valid solution. This makes every generated level solvable, without relying on random player guessing. Faces can be solved independently; arrow collisions don't extend between distinct cube faces.
 
 This is a standalone interpretation of the arrow-escape puzzle concept, not a pixel-for-pixel copy of another game's proprietary art or level data.
 
