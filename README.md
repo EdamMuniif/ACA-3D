@@ -10,7 +10,21 @@ A complete, original, mobile-friendly **3D arrow escape puzzle** built in plain 
 - Clear free arrows first, then newly unblocked arrows. Clear all faces to finish.
 - A blocked tap removes one heart. You have three hearts per attempt. Hints are unlimited.
 - Fifteen levels in three tiers: **Easy (1–5), Medium (6–10), Hard (11–15)**.
+- **Lanes** (dock button) draws every arrow's exit lane: green when clear, red where something stands in it.
 - Optional colorful arrow mode, sound effects, auto-saved unlocked levels and current level, and offline support.
+
+## Look and feel
+
+Vellum paper, ink arrows, and a single vermilion accent that is only spent on mistakes. The glass cube shows its
+back faces faintly, a blocked tap draws the lane in red and lights the blocking arrow in amber, and the whole UI is
+one phone-sized column (a bottom sheet for levels, a dock for controls) that also sits centred on desktop.
+
+| Play + Lanes | Why it was blocked | Level sheet |
+|---|---|---|
+| ![Play with lanes](design/screens/play-lanes.png) | ![Blocked feedback](design/screens/blocked-feedback.png) | ![Level sheet](design/screens/level-sheet.png) |
+
+Key art (`design/key-art.png`) is drawn from the real Level 12 board; the visual philosophy behind it is in
+`design/philosophy.md`. Fonts: Instrument Sans + Instrument Serif (OFL), bundled in `fonts/`.
 
 ## Run locally
 
@@ -46,7 +60,7 @@ The app uses relative paths, so it works at GitHub Pages repository subpaths. Af
 
 - `core.js`: deterministic puzzle generation (best of several seeds, scored by dependency depth), head-ray blocking, and level config. Independent of rendering, making it easy to test.
 - `game.js`: perspective-projected 3D cube, touch/mouse rotation, arrow picking, animation, hearts, hints, level navigation, settings, and save data.
-- `styles.css` and `index.html`: responsive user interface.
+- `styles.css` and `index.html`: mobile-first interface (design tokens at the top of `styles.css`).
 - `sw.js`: static offline caching (registered over HTTP(S), not `file://`).
 
 Each generated arrow is admitted only if its head ray is clear **with all previously placed arrows present**. Consequently, removing arrows in reverse insertion order is always a valid solution. This makes every generated level solvable, without relying on random player guessing. Faces can be solved independently; arrow collisions don't extend between distinct cube faces.

@@ -1,1 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="15" fill="#0d3155"/><path d="m32 9 21 12v23L32 56 11 44V21L32 9Z" fill="#eefaff" stroke="#42c6f5" stroke-width="3" stroke-linejoin="round"/><path d="m11 21 21 13 21-13M32 34v22" fill="none" stroke="#2b779c" stroke-width="2.6"/><path d="m19 26 10-6m-3-2 3 2-1 3M35 41l10-6m-4-1 4 1-1 4" fill="none" stroke="#102d4d" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Arrow Cube Away">
+  <rect width="512" height="512" rx="112" fill="#F3EEE3"/>
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <path d="M256 276v180L100 366V186z" fill="#F1EADA" stroke="#1B1D22" stroke-width="11"/>
+    <path d="M256 276v180l156-90V186z" fill="#F7F1E4" stroke="#1B1D22" stroke-width="11"/>
+    <path d="M256 96l156 90-156 90-156-90z" fill="#FFFDF8" stroke="#1B1D22" stroke-width="11"/>
+    <!-- ink arrows on the side faces -->
+    <path d="M160 322v-52" fill="none" stroke="#1B1D22" stroke-width="12"/>
+    <path d="M160 238l-15 34h30z" fill="#1B1D22" stroke="none"/>
+    <path d="M296 392v-44l50-29" fill="none" stroke="#1B1D22" stroke-width="12"/>
+    <path d="M378 301l-34-3 18 30z" fill="#1B1D22" stroke="none" transform="rotate(0)"/>
+    <!-- the one lane that leaves the cube -->
+    <path d="M300 208L169 132" fill="none" stroke="#E5482D" stroke-width="16"/>
+    <path d="M138 114l39 .2-19.8 34.6z" fill="#E5482D" stroke="none"/>
+  </g>
+</svg>

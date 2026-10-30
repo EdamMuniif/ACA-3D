@@ -8,16 +8,17 @@
   const context = canvas.getContext('2d', { alpha: true });
   const TAU = Math.PI * 2;
   const FACES = [
-    { id:'front',  normal:[0,0,1],  u:[1,0,0],  v:[0,-1,0], tint:'#ffffff' },
-    { id:'right',  normal:[1,0,0],  u:[0,0,-1], v:[0,-1,0], tint:'#f5faff' },
-    { id:'top',    normal:[0,1,0],  u:[1,0,0],  v:[0,0,1],  tint:'#ffffff' },
-    { id:'left',   normal:[-1,0,0], u:[0,0,1],  v:[0,-1,0], tint:'#f4f9ff' },
-    { id:'back',   normal:[0,0,-1], u:[-1,0,0], v:[0,-1,0], tint:'#ffffff' },
-    { id:'bottom', normal:[0,-1,0], u:[1,0,0],  v:[0,0,-1], tint:'#f5faff' }
+    { id:'front',  normal:[0,0,1],  u:[1,0,0],  v:[0,-1,0], tint:'#FBF8F1' },
+    { id:'right',  normal:[1,0,0],  u:[0,0,-1], v:[0,-1,0], tint:'#F6F1E6' },
+    { id:'top',    normal:[0,1,0],  u:[1,0,0],  v:[0,0,1],  tint:'#FDFBF6' },
+    { id:'left',   normal:[-1,0,0], u:[0,0,1],  v:[0,-1,0], tint:'#F4EEE2' },
+    { id:'back',   normal:[0,0,-1], u:[-1,0,0], v:[0,-1,0], tint:'#FBF8F1' },
+    { id:'bottom', normal:[0,-1,0], u:[1,0,0],  v:[0,0,-1], tint:'#F4EEE2' }
   ];
-  const COLORS = ['#0d658c','#6d54d8','#008f88','#d5842b','#a14f9e','#2076cb'];
+  const COLORS = ['#C8452C','#2F6F9F','#1F7A6D','#B8861B','#7B4B94','#3F5E3A'];
+  const INK = '#1B1D22', VERMILION = '#E5482D', AMBER = '#E0A030', VERDIGRIS = '#1F7A6D';
   const PERSIST_KEY = 'arrow-cube-away-v1';
-  const base = { unlocked:1, lastLevel:1, completed:[], sound:true, colorful:false };
+  const base = { unlocked:1, lastLevel:1, completed:[], sound:true, colorful:false, lanes:false };
   function loadSave() {
     try {
       const parsed = JSON.parse(localStorage.getItem(PERSIST_KEY));
@@ -28,7 +29,8 @@
         lastLevel:Math.min(Core.LEVEL_COUNT,Math.max(1,Number(parsed.lastLevel) || 1)),
         completed:[...new Set(completed)],
         sound:parsed.sound !== false,
-        colorful:parsed.colorful === true
+        colorful:parsed.colorful === true,
+        lanes:parsed.lanes === true
       };
     } catch { return { ...base }; }
   }
@@ -44,7 +46,7 @@
   let hintedId = null, hintExpiry = 0;
   let blockFeedback = null; // { arrowId, blockerId, tip, end, until } shown after a blocked tap
   let selectedPoints = [];
-  let modalOpen = false;
+  let modalOpen = false, sheetOpen = false;
   let lastToastTimer = 0;
   let activeGeneration = 0;
   let activeEscape = null;
@@ -87,11 +89,11 @@
   }
 
   function updateHUD() {
-    $('levelTitle').textContent = `Level ${String(currentLevel).padStart(2,'0')}`;
+    $('levelTitle').innerHTML = `<em>Level</em> <span class="num">${String(currentLevel).padStart(2,'0')}</span>`;
     $('levelFraction').textContent = `${String(currentLevel).padStart(2,'0')} / ${Core.LEVEL_COUNT}`;
     $('difficultyTag').textContent = level.tier.toUpperCase();
     $('difficultyTag').className = 'difficulty-tag ' + level.tier.toLowerCase();
-    $('hearts').innerHTML = Array.from({length:3},(_,i) => `<span class="${i < hearts ? '' : 'lost'}" aria-hidden="true">♥</span>`).join('');
+    $('hearts').innerHTML = Array.from({length:3},(_,i) => `<svg viewBox="0 0 24 22" class="${i < hearts ? '' : 'lost'}" aria-hidden="true"><path d="M12 20.5S2.5 14.8 2.5 8.4C2.5 5.2 4.9 3 7.6 3c1.8 0 3.4.9 4.4 2.4C13 3.9 14.6 3 16.4 3c2.7 0 5.1 2.2 5.1 5.4 0 6.4-9.5 12.1-9.5 12.1Z"/></svg>`).join('');
     $('hearts').setAttribute('aria-label',`${hearts} hearts remaining`);
     const remaining = level.arrows.filter(a => !a.removed).length;
     $('remainingCount').textContent = remaining;
@@ -99,7 +101,7 @@
     $('progressFill').style.width = percent+'%';
     $('progressTrack').setAttribute('aria-valuenow',String(percent));
     $('statSolved').textContent = String(progress.completed.length).padStart(2,'0');
-    $('stageNote').textContent = remaining === 0 ? 'ALL ARROWS CLEARED' : 'DRAG TO ROTATE · TAP AN ARROW TO ESCAPE';
+    $('stageNote').textContent = remaining === 0 ? 'ALL ARROWS CLEARED' : 'DRAG TO TURN · TAP AN ARROW';
   }
 
   function renderLevels() {
@@ -133,6 +135,7 @@
     hoveredId = null; hintedId = null; blockFeedback = null;
     yaw = -.66; pitch = .43; desiredYaw = yaw;
     $('toast').classList.remove('visible');
+    closeSheet();
     hideModal();
     updateHUD(); renderLevels();
     canvas.focus({ preventScroll:true });
@@ -173,28 +176,46 @@
     context.beginPath();context.moveTo(corners[0].x,corners[0].y);
     corners.slice(1).forEach(p => context.lineTo(p.x,p.y));context.closePath();
     context.save();
-    context.shadowColor='rgba(25,101,150,.16)';context.shadowBlur=12;
-    context.fillStyle=face.tint;context.fill();context.restore();
-    context.lineWidth=1.6;
-    context.strokeStyle='#a4c1d4';context.stroke();
+    context.shadowColor='rgba(27,29,34,.12)';context.shadowBlur=14;
+    context.globalAlpha=.72;context.fillStyle=face.tint;context.fill();context.restore();
+    context.lineWidth=1.5;
+    context.strokeStyle='#BDB29B';context.stroke();
     // Faint construction grid: helpful for understanding exact arrow clearance.
     for (let i=1;i<N;i++) {
       const off=.003;
-      drawSegment([project(pointOnFace(face,i,0,1+off)),project(pointOnFace(face,i,N,1+off))],'#b0d2e5',.65,.22);
-      drawSegment([project(pointOnFace(face,0,i,1+off)),project(pointOnFace(face,N,i,1+off))],'#b0d2e5',.65,.22);
+      drawSegment([project(pointOnFace(face,i,0,1+off)),project(pointOnFace(face,i,N,1+off))],'#CFC4AC',.65,.5);
+      drawSegment([project(pointOnFace(face,0,i,1+off)),project(pointOnFace(face,N,i,1+off))],'#CFC4AC',.65,.5);
     }
     // Subtle inset edge brings out the transparent-cube aesthetic.
     const inset=.06*N;
     const insetPoints=[[inset,inset],[N-inset,inset],[N-inset,N-inset],[inset,N-inset]].map(([x,y]) => project(pointOnFace(face,x,y,1.006)));
     context.beginPath();context.moveTo(insetPoints[0].x,insetPoints[0].y);
     insetPoints.slice(1).forEach(p=>context.lineTo(p.x,p.y));context.closePath();
-    context.strokeStyle='#dceef8'; context.lineWidth=.9;context.stroke();
+    context.strokeStyle='#E7DFCD'; context.lineWidth=.9;context.stroke();
+  }
+  function ghostFaces() {
+    return FACES.map(face => ({...face,view:rotateVector(face.normal)[2]})).filter(face => face.view <= .015);
+  }
+  // Back faces seen through the glass: outline plus faint arrows, never tappable.
+  function drawGhostFace(face) {
+    const N = level.size;
+    const corners = [[0,0],[N,0],[N,N],[0,N]].map(([x,y]) => project(pointOnFace(face,x,y,1.001)));
+    context.beginPath();context.moveTo(corners[0].x,corners[0].y);
+    corners.slice(1).forEach(p => context.lineTo(p.x,p.y));context.closePath();
+    context.lineWidth=1;context.strokeStyle='rgba(140,139,134,.45)';context.stroke();
+    const width = Math.max(1.4,Math.min(3.2,sceneScale*.013));
+    for (const arrow of level.arrows) {
+      if (arrow.face!==face.id || arrow.removed) continue;
+      const shape = Core.getEscapeShape(arrow,level.size,0);
+      const pts = shape.points.map(p=>project(pointOnFace(face,p.x,p.y,1.019)));
+      drawSegment(pts,'rgba(27,29,34,.42)',width);
+    }
   }
   function drawCubeShadow() {
     const width = sceneScale*1.65;
     const centerY=sceneHeight*.516 + sceneScale*1.39;
     const gradient=context.createRadialGradient(sceneWidth*.5,centerY,8,sceneWidth*.5,centerY,width);
-    gradient.addColorStop(0,'rgba(27,116,176,.16)');gradient.addColorStop(1,'rgba(27,116,176,0)');
+    gradient.addColorStop(0,'rgba(27,29,34,.15)');gradient.addColorStop(1,'rgba(27,29,34,0)');
     context.save();context.translate(sceneWidth*.5,centerY);context.scale(1,.24);context.translate(-sceneWidth*.5,-centerY);
     context.beginPath();context.arc(sceneWidth*.5,centerY,width,0,TAU);context.fillStyle=gradient;context.fill();context.restore();
   }
@@ -216,13 +237,22 @@
     const isHint = arrow.id===hintedId && time<hintExpiry && !arrow.removed;
     const isHover=arrow.id===hoveredId && !arrow.removed;
     const isBad=(arrow.badUntil||0)>time;
-    const color = isBad?'#e9506b':isHint?'#079da2':progress.colorful?COLORS[FACES.indexOf(FACES.find(f=>f.id===face.id))]:'#1d3249';
+    const color = isBad?VERMILION:isHint?VERDIGRIS:progress.colorful?COLORS[FACES.indexOf(FACES.find(f=>f.id===face.id))]:INK;
     const width = Math.max(2.4,Math.min(5.2,sceneScale*.021));
     context.save();
     // Keep the full arrow visible until the tail has crossed the cube edge.
     context.globalAlpha = motion ? Math.min(1,(1-fraction)/.07) : 1;
     if (isHint || isHover || isBad) {
-      drawSegment(points,isBad?'#ffd0d8':isHint?'#6df1e8':'#87d9fb',width+9,isHint?.70:.60);
+      drawSegment(points,isBad?'#F9C9BF':isHint?'#9ADBCB':'#EBD9A6',width+9,isHint?.75:.7);
+    }
+    if (progress.lanes && !arrow.removed && !motion) {
+      // Lane overlay: the straight run ahead of the head, red where something stands in it.
+      const why = Core.findBlocker(arrow,level.arrows,level.size);
+      const stop = why ? {x:why.at.x+.5,y:why.at.y+.5} : {x:headPos.x+direction.x*(level.size),y:headPos.y+direction.y*(level.size)};
+      const clampX = Math.max(0,Math.min(level.size,stop.x)), clampY = Math.max(0,Math.min(level.size,stop.y));
+      context.save(); context.setLineDash([5,5]);
+      drawSegment([head(headPos.x,headPos.y),head(clampX,clampY)],why?VERMILION:VERDIGRIS,1.8,why?.5:.6);
+      context.restore();
     }
     const fb = blockFeedback && time < blockFeedback.until ? blockFeedback : null;
     if (fb && arrow.id===fb.arrowId) {
@@ -230,15 +260,15 @@
       const pulse = .75 + .25*Math.sin(time*.016);
       const run = [head(headPos.x,headPos.y),head(fb.end.x+.5,fb.end.y+.5)];
       context.save(); context.setLineDash([7,6]);
-      drawSegment(run,'#e9506b',width+1.5,pulse); context.restore();
+      drawSegment(run,VERMILION,width+1.5,pulse); context.restore();
     }
-    if (fb && arrow.id===fb.blockerId) drawSegment(points,'#f2a65a',width+8,.55+.25*Math.sin(time*.016));
+    if (fb && arrow.id===fb.blockerId) drawSegment(points,AMBER,width+8,.5+.25*Math.sin(time*.016));
     drawSegment(points,color,width);
     context.beginPath(); context.moveTo(tip.x,tip.y);context.lineTo(wing1.x,wing1.y);context.lineTo(wing2.x,wing2.y);context.closePath();
     context.fillStyle=color; context.fill();
     if (isHint) {
       context.beginPath();context.arc(tip.x,tip.y,12+2*Math.sin(time*.008),0,TAU);
-      context.strokeStyle='rgba(5,164,159,.53)';context.lineWidth=2;context.stroke();
+      context.strokeStyle='rgba(31,122,109,.6)';context.lineWidth=2;context.stroke();
     }
     context.restore();
     if (!arrow.removed) selectedPoints.push({arrow,points,depth:rotateVector(face.normal)[2],tip});
@@ -263,6 +293,7 @@
     drawCubeShadow();
     const faces=faceNormals();
     selectedPoints=[];
+    for (const face of ghostFaces()) drawGhostFace(face);
     for (const face of faces) {
       drawFace(face);
       for (const arrow of level.arrows) if (arrow.face===face.id) drawArrow(arrow,face,time);
@@ -401,8 +432,24 @@
     playSound('hint');
   }
 
+  function openSheet() {
+    renderLevels();
+    sheetOpen=true;modalOpen=true;
+    $('sheet').classList.remove('hidden');
+    const sheet=$('sheet').querySelector('.sheet');sheet.setAttribute('tabindex','-1');sheet.focus({preventScroll:true});
+  }
+  function closeSheet() {
+    sheetOpen=false;
+    $('sheet').classList.add('hidden');
+    if ($('modal').classList.contains('hidden')) modalOpen=false;
+  }
+  function setLanes(on) {
+    progress.lanes=on;persist();
+    $('lanesBtn').setAttribute('aria-pressed',String(on));
+  }
+
   function hideModal() {
-    modalOpen=false;
+    modalOpen=sheetOpen;
     $('modal').classList.add('hidden');
     $('modalExtra').innerHTML='';
   }
@@ -422,7 +469,7 @@
       btn.addEventListener('click',item.action);wrap.appendChild(btn);
     }
     $('modal').classList.remove('hidden');
-    $('modalClose').focus({preventScroll:true});
+    const box=$('modal').querySelector('.modal');box.setAttribute('tabindex','-1');box.focus({preventScroll:true});
   }
   function showWinModal() {
     playSound('win');
@@ -471,7 +518,7 @@
     for (const [title,description] of [
       ['01 · Rotate','Drag left/right/up/down to inspect every side. You can use the Left / Right buttons too.'],
       ['02 · Check the exit','An arrow leaves head-first, straight in the direction its arrowhead points. If nothing is in that line ahead of the head, it can go. Only the line in front matters.'],
-      ['03 · Release','Tap a clear arrow to slide it away. A blocked tap loses one heart, but a hint is free.'],
+      ['03 · Release','Tap a clear arrow to slide it away. A blocked tap loses one heart and shows what is in the way. Hints are free, and Lanes shows every exit at once.'],
       ['04 · Complete','Remove all arrows on every side to unlock the next level. Your progress saves automatically on this device.']
     ]) {const p=document.createElement('p');p.className='help-copy';const strong=document.createElement('strong');strong.textContent=title+' — ';p.append(strong,document.createTextNode(description));help.appendChild(p);}
   }
@@ -484,7 +531,12 @@
   $('settingsBtn').addEventListener('click',openSettings);
   $('modalClose').addEventListener('click',hideModal);
   $('modal').addEventListener('pointerdown',e=>{if(e.target===$('modal'))hideModal();});
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modalOpen)hideModal();});
+  $('menuBtn').addEventListener('click',openSheet);
+  $('sheetClose').addEventListener('click',closeSheet);
+  $('sheet').addEventListener('pointerdown',e=>{if(e.target===$('sheet'))closeSheet();});
+  $('lanesBtn').addEventListener('click',()=>setLanes(!progress.lanes));
+  $('lanesBtn').setAttribute('aria-pressed',String(progress.lanes));
+  document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(!$('modal').classList.contains('hidden'))hideModal();else if(sheetOpen)closeSheet();});
   document.body.classList.toggle('muted',!progress.sound);
   const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(refreshSize) : null;
   if(resizeObserver)resizeObserver.observe(stage);

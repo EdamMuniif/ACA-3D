@@ -1,6 +1,7 @@
 /* Offline cache, scoped to the GitHub Pages project subdirectory. */
-const VERSION = 'arrow-cube-away-cache-v3';
-const ASSETS = ['./', './index.html', './styles.css', './core.js', './game.js', './icon.svg', './manifest.webmanifest'];
+const VERSION = 'arrow-cube-away-cache-v4';
+const ASSETS = ['./', './index.html', './styles.css', './core.js', './game.js', './icon.svg', './manifest.webmanifest',
+  './fonts/InstrumentSans-Regular.woff2', './fonts/InstrumentSans-Bold.woff2', './fonts/InstrumentSerif-Regular.woff2', './fonts/InstrumentSerif-Italic.woff2'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(VERSION).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting()));
 });
