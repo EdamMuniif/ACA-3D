@@ -100,8 +100,12 @@
   function updateProfileDisplays() {
     const name=progress.playerName;
     $('homePlayerGreeting').textContent=name;
+    $('heroPlayerName').textContent=name;
     if(document.activeElement!==$('playerNameInput')) $('playerNameInput').value=name;
     $('homePoints').textContent=progress.points.toLocaleString();
+    $('heroPoints').textContent=progress.points.toLocaleString();
+    $('heroCurrentLevel').textContent=String(Math.min(progress.unlocked,progress.lastLevel)).padStart(2,'0');
+    $('heroWins').textContent=progress.completed.length+' / '+Core.LEVEL_COUNT;
     $('homeCompleted').textContent=progress.completed.length+' / 15';
     $('homeNextLevel').textContent=String(progress.unlocked).padStart(2,'0');
     $('homeProgressFill').style.width=(progress.completed.length/Core.LEVEL_COUNT*100)+'%';
@@ -110,7 +114,7 @@
     $('levelUnlockedLabel').textContent=String(progress.unlocked);
     $('hudPlayerName').textContent=name;
     $('hudPoints').textContent=progress.points.toLocaleString();
-    $('playBtnLabel').textContent=progress.completed.length ? 'Continue playing' : 'Start playing';
+    $('playBtnLabel').textContent=progress.completed.length ? 'Continue' : 'Play now';
   }
   function savePlayerName() {
     const input=$('playerNameInput');
@@ -128,6 +132,8 @@
     $('playScreen').hidden=which!=='play';
     $('homeNavBtn').classList.toggle('active',which==='home');
     $('levelsNavBtn').classList.toggle('active',which==='levels');
+    $('homeNavBtn').setAttribute('aria-pressed',String(which==='home'));
+    $('levelsNavBtn').setAttribute('aria-pressed',String(which==='levels'));
     hideModal();
     updateProfileDisplays();
     if(which==='levels') renderLevels();
