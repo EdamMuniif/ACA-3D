@@ -59,7 +59,7 @@
   let modalOpen = false;
   let lastToastTimer = 0;
   let activeGeneration = 0;
-  let activeEscape = null;
+  const escaping = new Set(); // arrows currently animating out; several may run at once
   let sceneWidth = 0, sceneHeight = 0, sceneScale = 0;
   let audioContext = null;
   let lastTime = 0;
@@ -200,7 +200,7 @@
 
   function startLevel(index) {
     activeGeneration++;
-    activeEscape = null;
+    escaping.clear();
     currentLevel = Math.min(Core.LEVEL_COUNT,Math.max(1,index));
     progress.lastLevel = currentLevel;
     persist();
@@ -354,11 +354,12 @@
     if (screenMode!=='play' || !sceneWidth || !sceneHeight || !level) return;
     const elapsed = Math.min(40,time-lastTime || 16);
     lastTime=time;
-    if (activeEscape && time-activeEscape.escape.startedAt >= activeEscape.escape.duration) {
-      const finished = activeEscape;
-      finished.escape = null;
-      activeEscape = null;
-      if (level.arrows.every(a=>a.removed)) finishLevel();
+    if (escaping.size) {
+      for (const arrow of escaping) {
+        if (time-arrow.escape.startedAt >= arrow.escape.duration) { arrow.escape = null; escaping.delete(arrow); }
+      }
+      // Win only once the last arrow has visibly left the cube.
+      if (!escaping.size && level.arrows.every(a=>a.removed)) finishLevel();
     }
     if (!drag) {
       const difference=desiredYaw-yaw;
@@ -445,9 +446,12 @@
     } else if (event.key==='h'||event.key==='H') { event.preventDefault();showHint(); }
   });
   function attemptRelease(arrow) {
-    // Keep the board stable while one head-to-tail escape is in motion.
-    if (activeEscape || arrow.removed || hearts<=0) return;
+    // Arrows are marked removed the moment they are released, so several can
+    // glide out together without affecting what blocks what.
+    if (arrow.removed || hearts<=0) return;
     const stamp=performance.now();
+    // A second tap on an arrow that is still flashing red is the same mistake, not a new one.
+    if ((arrow.badUntil||0)>stamp) return;
     const blocker=Core.getBlocker(arrow,level.arrows,level.size);
     if (blocker) {
       hearts--;
@@ -467,7 +471,7 @@
     const reducedMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     arrow.escape={startedAt:stamp,distance:shape.totalTravel,
       duration:reducedMotion ? 200 : Math.min(950,Math.max(560,360+shape.totalTravel*55))};
-    activeEscape=arrow;
+    escaping.add(arrow);
     hintedId=null;hoveredId=null;blockFeedback=null;
     playSound('good');
     updateHUD();
@@ -484,7 +488,7 @@
     showWinModal();
   }
   function showHint() {
-    if (modalOpen || !level || activeEscape) return;
+    if (modalOpen || !level) return;
     const options=Core.availableArrows(level);
     if (!options.length) return;
     const visibles=faceNormals().map(f=>f.id);

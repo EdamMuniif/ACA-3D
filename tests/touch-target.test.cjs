@@ -90,3 +90,14 @@ test('renderer draws shaft to triangle base rather than covering tip with a roun
   assert.match(game,/context\.lineTo\(wing2\.x,wing2\.y\)/);
   assert.match(game,/selectedPoints\.push\(\{arrow,points,depth:.*tip,wing1,wing2,width\}\)/);
 });
+
+test('several arrows may escape at once and a repeat tap on a blocked arrow is free',()=>{
+  const fs=require('node:fs'),path=require('node:path');
+  const js=fs.readFileSync(path.join(__dirname,'../game.js'),'utf8');
+  assert.doesNotMatch(js,/activeEscape/,'single-escape lock must not return');
+  assert.match(js,/const escaping = new Set\(\)/);
+  // The win modal waits until the last escaping arrow has left the cube.
+  assert.match(js,/!escaping\.size && level\.arrows\.every\(a=>a\.removed\)\) finishLevel\(\)/);
+  // A second tap while the arrow is still flashing red must not cost another heart.
+  assert.match(js,/if \(\(arrow\.badUntil\|\|0\)>stamp\) return;/);
+});
