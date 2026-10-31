@@ -80,15 +80,34 @@ test('home, level select, play, name and restart function in the browser control
   assert.equal(el('homeScreen').hidden,false);
   assert.equal(el('playScreen').hidden,true);
   assert.ok(raf.length>0,'Animation loop must initialize');
-  assert.equal(el('heroCurrentLevel').textContent,'01');
-  assert.equal(el('heroWins').textContent,'0 / 15');
-  assert.equal(el('heroPoints').textContent,'0');
+  assert.equal(el('homePoints').textContent,'0');
+  assert.equal(el('homeCompleted').textContent,'0 / 15');
+  assert.equal(el('homeNextLevel').textContent,'01');
+  assert.equal(el('homeProgressTrack').attrs['aria-valuenow'],'0');
+  assert.equal(el('profileToggle').attrs['aria-expanded'],'false');
+  assert.equal(el('rulesToggle').attrs['aria-expanded'],'false');
+  assert.equal(el('profilePanel').hidden,true);
+  assert.equal(el('rulesPanel').hidden,true);
+  // Floating profile and help panels are mutually exclusive.
+  el('profileToggle').click();
+  assert.equal(el('profileToggle').attrs['aria-expanded'],'true');
+  assert.equal(el('profilePanel').hidden,false);
+  el('rulesToggle').click();
+  assert.equal(el('profilePanel').hidden,true);
+  assert.equal(el('rulesPanel').hidden,false);
+  assert.equal(el('profileToggle').attrs['aria-expanded'],'false');
+  el('rulesToggle').click();
+  assert.equal(el('rulesPanel').hidden,true);
+  el('profileToggle').click();
   assert.equal(el('homeNavBtn').attrs['aria-pressed'],'true');
     el('playerNameInput').value='Ada';
   el('saveNameBtn').click();
   assert.equal(JSON.parse(localStorage.getItem('arrow-cube-away-v1')).playerName,'Ada');
   assert.equal(el('heroPlayerName').textContent,'Ada');
+  assert.equal(el('homePlayerGreeting').textContent,'Ada');
   el('pickLevelBtn').click();
+  assert.equal(el('profilePanel').hidden,true);
+  assert.equal(el('profileToggle').attrs['aria-expanded'],'false');
   assert.equal(el('levelsScreen').hidden,false);
   assert.equal(el('easyLevelsScreen').children.length,5);
   assert.equal(el('easyLevelsScreen').children[0].disabled,false);
@@ -117,9 +136,17 @@ test('legacy saves migrate without losing unlocked level progress',()=>{
 test('mobile UX source keeps navigation touch-friendly and first-screen progress visible',()=>{
   const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
   const css=fs.readFileSync(path.join(__dirname,'../styles.css'),'utf8');
-  assert.match(html,/id="heroCurrentLevel"/);
-  assert.match(html,/id="heroPoints"/);
-  assert.match(html,/id="heroWins"/);
+  assert.doesNotMatch(html,/class="hero-summary"/,'duplicate hero progress must be removed');
+  assert.doesNotMatch(html,/id="heroPoints"|id="heroWins"|id="heroCurrentLevel"/);
+  for(const id of ['homePoints','homeCompleted','homeNextLevel']){
+    assert.equal([...html.matchAll(new RegExp('id="'+id+'"','g'))].length,1,
+      id+' should be displayed exactly once on Home');
+  }
+  assert.match(html,/class="home-top-tools"/);
+  assert.match(html,/id="profileToggle" aria-label="Player profile"/);
+  assert.match(html,/id="rulesToggle" aria-label="How it works"/);
+  assert.match(css,/\.home-tool-button\s*\{[\s\S]*?border-radius:50%/);
+  assert.match(css,/\.home-popover\s*\{[\s\S]*?position:absolute/);
   assert.match(css,/@media\s*\(max-width:700px\)/);
   assert.match(css,/\.header-controls\s*\{display:grid;width:100%;grid-template-columns:/);
   assert.match(css,/\.home-actions\s*\{display:grid;grid-template-columns:/);

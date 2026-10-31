@@ -183,3 +183,7 @@ The 3D cube stays rotatable, but **every arrow is a flat 2D printed path on its 
 - Tap detection continues to use the **entire projected path and triangular head**; selection includes tail, bends, body, and tip. Existing touch-friendly padding is preserved.
 - Animations still follow the arrow centerline head-first; board collision, five hearts, scoring, unlocked levels, player name and saved progress are unchanged.
 - The V19 grazing-angle fade and ghost restrictions remain in place; cache version and asset URLs are now **V20**.
+
+## V21 — compact Home UI
+
+The home page has **one** progress summary, not duplicate counters in the hero and the progress card. The progress card shows total points, cleared levels, and highest unlocked level in one compact row with a progress bar. Two circular icon buttons at the **top-right of Home** open the editable Player Profile and How It Works panels. The panels are mutually exclusive, close when navigating away or pressing Escape, and are otherwise hidden to reduce scroll on phones. The home hero and artwork are smaller; the illustration is omitted on narrow screens. No player saves, puzzle mechanics, scoring, or level content change.
