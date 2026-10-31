@@ -8,6 +8,9 @@ const Core=require('../core.js');
 test('scoring rewards completed puzzles but never farms replayed points',()=>{
   const first=Core.calculateLevelScore({arrows:5,hearts:3,hints:0,tier:'Easy'});
   assert.equal(first,150);
+  assert.equal(Core.MAX_HEARTS,5);
+  assert.equal(Core.calculateLevelScore({arrows:5,hearts:5,hints:0,tier:'Easy'}),200);
+  assert.equal(Core.calculateLevelScore({arrows:5,hearts:99,hints:0,tier:'Easy'}),200);
   assert.equal(Core.calculateLevelScore({arrows:5,hearts:3,hints:2,tier:'Easy'}),120);
   assert.equal(Core.calculateLevelScore({arrows:50,hearts:1,hints:4,tier:'Hard'}),615);
   assert.deepEqual(Core.getScoreAward(0,first),{best:150,awarded:150});
@@ -93,7 +96,7 @@ test('home, level select, play, name and restart function in the browser control
   assert.equal(el('hudPlayerName').textContent,'Ada');
   assert.ok(Number(el('remainingCount').textContent)>0);
   el('resetBtn').click();
-  assert.equal(el('hearts').attrs['aria-label'],'3 hearts remaining');
+  assert.equal(el('hearts').attrs['aria-label'],'5 hearts remaining');
   el('homeNavBtn').click();
   assert.equal(el('homeScreen').hidden,false);
 });

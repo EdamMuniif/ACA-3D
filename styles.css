@@ -368,3 +368,16 @@ h1 { margin:0; color:#112a4a; letter-spacing:-.065em; font-size:36px; line-heigh
   .header-icon {width:40px;height:44px}
   .brand-title {font-size:13px}
 }
+
+/* V9: five readable hearts without horizontal HUD overflow on phones. */
+.hearts {display:flex;align-items:center;flex-wrap:nowrap;gap:4px;white-space:nowrap}
+@media (max-width:560px) {
+  .game-hud {flex-direction:column;align-items:stretch;gap:10px}
+  .hud-right {
+    width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;
+    grid-template-rows:auto auto;align-items:center;gap:6px 10px;text-align:left
+  }
+  .hearts {grid-column:1;grid-row:1;gap:3px;font-size:clamp(20px,6vw,26px)}
+  .arrow-counter {grid-column:2;grid-row:1;justify-self:end}
+  .player-score-line {grid-column:1 / -1;grid-row:2;justify-self:start}
+}

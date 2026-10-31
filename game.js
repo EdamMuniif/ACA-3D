@@ -47,7 +47,7 @@
   function persist() { try { localStorage.setItem(PERSIST_KEY,JSON.stringify(progress)); } catch {} }
   let level = null;
   let currentLevel = 1;
-  let hearts = 3;
+  let hearts = Core.MAX_HEARTS;
   let yaw = -.66, pitch = .43;
   let desiredYaw = yaw;
   let drag = null;
@@ -146,7 +146,7 @@
     $('levelFraction').textContent = `${String(currentLevel).padStart(2,'0')} / 15`;
     $('difficultyTag').textContent = level.tier.toUpperCase();
     $('difficultyTag').className = 'difficulty-tag ' + level.tier.toLowerCase();
-    $('hearts').innerHTML = Array.from({length:3},(_,i) => `<span class="${i < hearts ? '' : 'lost'}" aria-hidden="true">♥</span>`).join('');
+    $('hearts').innerHTML = Array.from({length:Core.MAX_HEARTS},(_,i) => `<span class="${i < hearts ? '' : 'lost'}" aria-hidden="true">♥</span>`).join('');
     $('hearts').setAttribute('aria-label',`${hearts} hearts remaining`);
     const remaining = level.arrows.filter(a => !a.removed).length;
     $('remainingCount').textContent = remaining;
@@ -203,7 +203,7 @@
     progress.lastLevel = currentLevel;
     persist();
     level = Core.generateLevel(currentLevel);
-    hearts = 3; hintsUsed = 0; lastScoreAward = 0; lastLevelScore = 0;
+    hearts = Core.MAX_HEARTS; hintsUsed = 0; lastScoreAward = 0; lastLevelScore = 0;
     hoveredId = null; hintedId = null;
     yaw = -.66; pitch = .43; desiredYaw = yaw;
     $('toast').classList.remove('visible');
@@ -290,8 +290,11 @@
     const isHint = arrow.id===hintedId && time<hintExpiry && !arrow.removed;
     const isHover=arrow.id===hoveredId && !arrow.removed;
     const isBad=(arrow.badUntil||0)>time;
-    const color = isBad?'#e9506b':isHint?'#079da2':progress.colorful?COLORS[FACES.indexOf(FACES.find(f=>f.id===face.id))]:'#152a3c';
-    const width = Math.max(2.5,Math.min(5.3,sceneScale*.023));
+    const color = isBad?'#e9506b':isHint?'#079da2':progress.colorful?COLORS[FACES.indexOf(FACES.find(f=>f.id===face.id))]:'#101419';
+    // Keep black winding lines bold like the reference, while scaling down
+    // slightly in tightly packed high-density levels to preserve separation.
+    const cellPitch=sceneScale*2/level.size;
+    const width=Math.max(4.5,Math.min(12,cellPitch*.46));
     context.save();
     // Keep the full arrow visible until the tail has crossed the cube edge.
     context.globalAlpha = motion ? Math.min(1,(1-fraction)/.07) : 1;
@@ -315,7 +318,7 @@
       context.strokeStyle='rgba(5,164,159,.53)';context.lineWidth=2;context.stroke();
     }
     context.restore();
-    if (!arrow.removed) selectedPoints.push({arrow,points,depth:rotateVector(face.normal)[2],tip});
+    if (!arrow.removed) selectedPoints.push({arrow,points,depth:rotateVector(face.normal)[2],tip,wing1,wing2,width});
   }
 
   function draw(time) {
@@ -353,23 +356,10 @@
     context.setTransform(ratio,0,0,ratio,0,0);
     sceneScale=Math.min(sceneWidth*.285,sceneHeight*.27,225);
   }
-  function distanceToSegment(x,y,a,b) {
-    const dx=b.x-a.x,dy=b.y-a.y;
-    const t=Math.max(0,Math.min(1,((x-a.x)*dx+(y-a.y)*dy)/Math.max(.01,dx*dx+dy*dy)));
-    return Math.hypot(x-(a.x+t*dx),y-(a.y+t*dy));
-  }
-  function hitArrow(x,y) {
-    let selected=null,score=Infinity;
-    for (const item of selectedPoints) {
-      let distance=Math.hypot(x-item.tip.x,y-item.tip.y);
-      for (let i=0;i<item.points.length-1;i++) distance=Math.min(distance,distanceToSegment(x,y,item.points[i],item.points[i+1]));
-      // Keep taps within a single lane on denser grids; avoid selecting
-      // neighbouring blocked arrows that are only a few pixels away.
-      const tolerance=Math.max(6,Math.min(13,sceneScale*.82/level.size));
-      const candidateScore=distance-item.depth*1.25;
-      if (distance<=tolerance && candidateScore<score) {selected=item.arrow;score=candidateScore;}
-    }
-    return selected;
+  function hitArrow(x,y,pointerType='touch') {
+    // All projected body segments and the full arrowhead are interactive.
+    // Stay close to the visible stroke to avoid stealing neighboring taps.
+    return Core.pickProjectedArrow(x,y,selectedPoints,pointerType==='mouse'?4:8);
   }
   function canvasCoords(event) {
     const rect=canvas.getBoundingClientRect();
@@ -379,7 +369,8 @@
     if (modalOpen || !level) return;
     if (event.button!==0 && event.pointerType==='mouse') return;
     const p=canvasCoords(event);
-    drag={x:p.x,y:p.y,lastX:p.x,lastY:p.y,moved:false};
+    drag={x:p.x,y:p.y,lastX:p.x,lastY:p.y,moved:false,
+      startArrow:hitArrow(p.x,p.y,event.pointerType),pointerType:event.pointerType};
     desiredYaw=yaw;hoveredId=null;
     canvas.setPointerCapture(event.pointerId);
   });
@@ -388,7 +379,7 @@
     const p=canvasCoords(event);
     if (drag) {
       const dx=p.x-drag.lastX,dy=p.y-drag.lastY;
-      if (Math.hypot(p.x-drag.x,p.y-drag.y)>6) drag.moved=true;
+      if (Math.hypot(p.x-drag.x,p.y-drag.y)>(drag.pointerType==='mouse'?6:12)) drag.moved=true;
       if (drag.moved) {
         yaw+=dx*.009;desiredYaw=yaw;
         pitch=Math.max(-1.38,Math.min(1.38,pitch+dy*.008));
@@ -396,20 +387,23 @@
       }
       drag.lastX=p.x;drag.lastY=p.y;
     } else {
-      hoveredId=hitArrow(p.x,p.y)?.id||null;
+      hoveredId=hitArrow(p.x,p.y,event.pointerType)?.id||null;
       canvas.style.cursor=hoveredId?'pointer':'grab';
     }
   });
   canvas.addEventListener('pointerup',event=>{
     if (!drag) return;
     const wasDrag=drag.moved;
+    const press=drag;
     drag=null;
     canvas.classList.remove('dragging');
     if (!wasDrag && !modalOpen) {
       const p=canvasCoords(event);
-      const arrow=hitArrow(p.x,p.y);
+      // Use the closest segment on release, or the original touched segment
+      // if the player's finger drifted slightly without rotating the cube.
+      const arrow=press.startArrow || hitArrow(p.x,p.y,event.pointerType);
       if (arrow) attemptRelease(arrow);
-      else setToast('Tap a black arrow line to release it.');
+      else setToast('Tap anywhere on a visible arrow to release it.');
     }
   });
   canvas.addEventListener('pointercancel',()=>{drag=null;canvas.classList.remove('dragging');});
@@ -522,7 +516,7 @@
   }
   function showLossModal() {
     openModal({icon:'↺',eyebrow:'GIVE IT ANOTHER GO',title:'Out of hearts',
-      message:'Blocked arrows cost a heart. Look for a clear lane, or use a hint before tapping.',
+      message:`Blocked arrows cost one heart. You have ${Core.MAX_HEARTS} hearts per attempt. Look for a clear lane or use a hint.`,
       buttons:[{text:'Home',action:()=>showScreen('home')},{text:'Try again',primary:true,action:()=>startLevel(currentLevel)}]});
   }
   function toggleSound() { progress.sound=!progress.sound;persist();document.body.classList.toggle('muted',!progress.sound);$('soundBtn').setAttribute('aria-label',progress.sound?'Mute sounds':'Unmute sounds'); }
@@ -570,7 +564,7 @@
     for (const [title,description] of [
       ['01 · Rotate','Drag left/right/up/down to inspect every side. You can use the Left / Right buttons too.'],
       ['02 · Check the exit','Each arrow follows its own bends head-first, with the tail following behind. It exits straight beyond its arrowhead. The cells ahead of that head must be clear.'],
-      ['03 · Release','Tap a clear arrow to slide it away. A blocked tap loses one heart, but a hint is free.'],
+      ['03 · Release',`Tap anywhere along a visible arrow body or arrowhead. A blocked move loses one of your ${Core.MAX_HEARTS} hearts. Hints are available.`],
       ['04 · Complete','Clear the cube to unlock the next level and score points. More arrows, higher difficulty, and remaining hearts increase score. Each hint deducts 15 points. Replaying only adds improvements over your best score.']
     ]) {const p=document.createElement('p');p.className='help-copy';const strong=document.createElement('strong');strong.textContent=title+' — ';p.append(strong,document.createTextNode(description));help.appendChild(p);}
   }
