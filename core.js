@@ -244,6 +244,54 @@
     };
   }
 
+  // Flat ink geometry in face-local GRID coordinates. These vertices get
+  // projected along with the cube surface; no constant screen-space line
+  // thickness, billboard tips, extrusion or fake 3D arrow geometry.
+  function buildFlatArrowGeometry(points,direction,bodyWidth=.23) {
+    if (!Array.isArray(points) || points.length<2 ||
+        points.some(p=>!Number.isFinite(p?.x)||!Number.isFinite(p?.y))) return null;
+    const dx=Number(direction?.x),dy=Number(direction?.y);
+    const length=Math.hypot(dx,dy);
+    if (!Number.isFinite(length) || length<.001) return null;
+    const ux=dx/length,uy=dy/length;
+    const width=Math.max(.10,Math.min(.32,Number(bodyWidth)||.23));
+    const radius=width/2,headLength=.32,headHalfWidth=.25;
+    const tip=points[points.length-1];
+    const base={x:tip.x-ux*headLength,y:tip.y-uy*headLength};
+    const shaft=points.slice(0,-1).map(p=>({x:p.x,y:p.y}));
+    shaft.push(base);
+    const quads=[],discs=[];
+    for(let i=1;i<shaft.length;i++) {
+      const a=shaft[i-1],b=shaft[i];
+      const lx=b.x-a.x,ly=b.y-a.y,dist=Math.hypot(lx,ly);
+      if(dist<.0001)continue;
+      const nx=-ly/dist*radius,ny=lx/dist*radius;
+      quads.push([
+        {x:a.x+nx,y:a.y+ny},{x:b.x+nx,y:b.y+ny},
+        {x:b.x-nx,y:b.y-ny},{x:a.x-nx,y:a.y-ny}
+      ]);
+    }
+    // Circular joints and a rounded tail are flat disks on the same face.
+    // Each disk is projected with the face, so it foreshortens correctly.
+    for(const p of shaft) {
+      const disc=[];
+      for(let j=0;j<12;j++){
+        const a=j*Math.PI*2/12;
+        disc.push({x:p.x+radius*Math.cos(a),y:p.y+radius*Math.sin(a)});
+      }
+      discs.push(disc);
+    }
+    return {
+      quads,discs,
+      head:[
+        {x:tip.x,y:tip.y},
+        {x:base.x-uy*headHalfWidth,y:base.y+ux*headHalfWidth},
+        {x:base.x+uy*headHalfWidth,y:base.y-ux*headHalfWidth}
+      ],
+      shaft,bodyWidth:width,headWidth:headHalfWidth*2
+    };
+  }
+
   // Screen-space selection: the entire visible polyline, including its
   // arrowhead, is tappable. Pick the nearest stroke instead of requiring
   // an exact tap on the tip; slight depth preference breaks visual ties.
@@ -309,5 +357,5 @@
   // drag still follows the finger after the cube has been tipped over the top.
   function turnDirection(pitch) { return Math.cos(pitch) < 0 ? -1 : 1; }
 
-  return { nearestAngle, turnDirection, faceArrowOpacity, FACE_IDS, LEVEL_COUNT, MAX_HEARTS, pickProjectedArrow, buildArrowHead, arrowMetrics, sceneScale, getLevelConfig, generateLevel, isBlocked, getBlocker, getDirection, getEscapeShape, availableArrows, calculateLevelScore, getScoreAward };
+  return { nearestAngle, turnDirection, faceArrowOpacity, FACE_IDS, LEVEL_COUNT, MAX_HEARTS, pickProjectedArrow, buildArrowHead, buildFlatArrowGeometry, arrowMetrics, sceneScale, getLevelConfig, generateLevel, isBlocked, getBlocker, getDirection, getEscapeShape, availableArrows, calculateLevelScore, getScoreAward };
 });

@@ -174,3 +174,12 @@ A regression in V9 made the winding arrow shafts thick without increasing their 
 The user-provided rotation recording shows arrows collapsing into thick overlapping arrowhead bands along the silhouette of the cube. This is a rendering artifact from the projected perspective and large pixel-sized arrowheads, not a corrupted puzzle state.
 
 **Fix:** Keep the cube's face outlines and grids visible through 360-degree rotation, but cull arrows completely when their face's camera-facing normal component is 0.28 or below. Fade arrows smoothly to full opacity at 0.66. Extremely faint rear-face hints only display when the back face is substantially turned away (at most -0.85); grazing faces cannot create edge clutter. Hint targeting follows visible arrows. Player progress, five hearts, level geometry, collision logic, and release animations remain unchanged.
+
+## V20 — perspective-correct flat ink arrows
+
+The 3D cube stays rotatable, but **every arrow is a flat 2D printed path on its corresponding cube face**, matching the user's reference images. Unlike the old fixed-pixel canvas strokes, the **thick shaft**, rounded bends and **triangular arrowhead** are constructed as flat, filled polygons in local face-grid coordinates. Their vertices are then projected through the cube's existing 3D camera, so their apparent thickness and head size foreshorten naturally when the cube tilts. No arrow depth, extrusion or billboard-style head is added.
+
+- Ink body width: approximately **0.23 grid cell**; triangular head width: **0.50 cell**; this remains consistent across grid sizes and 3D orientations.
+- Tap detection continues to use the **entire projected path and triangular head**; selection includes tail, bends, body, and tip. Existing touch-friendly padding is preserved.
+- Animations still follow the arrow centerline head-first; board collision, five hearts, scoring, unlocked levels, player name and saved progress are unchanged.
+- The V19 grazing-angle fade and ghost restrictions remain in place; cache version and asset URLs are now **V20**.

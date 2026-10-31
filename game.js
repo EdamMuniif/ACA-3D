@@ -292,67 +292,78 @@
     context.save();context.translate(sceneWidth*.5,centerY);context.scale(1,.24);context.translate(-sceneWidth*.5,-centerY);
     context.beginPath();context.arc(sceneWidth*.5,centerY,width,0,TAU);context.fillStyle=gradient;context.fill();context.restore();
   }
+  // A ribbon is a filled polygon lying on the actual cube face. Both its
+  // width and its triangular tip are measured in GRID units, so they share
+  // the same perspective and foreshortening as the face itself.
+  function fillFacePolygon(face,vertices) {
+    if(!vertices || vertices.length<3)return;
+    const start=project(pointOnFace(face,vertices[0].x,vertices[0].y,1.023));
+    context.beginPath();
+    context.moveTo(start.x,start.y);
+    for(let i=1;i<vertices.length;i++){
+      const p=project(pointOnFace(face,vertices[i].x,vertices[i].y,1.023));
+      context.lineTo(p.x,p.y);
+    }
+    context.closePath();
+    context.fill();
+  }
+  function paintFlatArrow(face,geometry,color,alpha=1) {
+    context.save();
+    context.globalAlpha*=alpha;
+    context.fillStyle=color;
+    for(const quad of geometry.quads)fillFacePolygon(face,quad);
+    for(const disk of geometry.discs)fillFacePolygon(face,disk);
+    fillFacePolygon(face,geometry.head);
+    context.restore();
+  }
   function drawArrow(arrow,face,time) {
     if (arrow.removed && !arrow.escape) return;
-    const motion = arrow.escape;
-    const fraction = motion ? Math.max(0,Math.min(1,(time-motion.startedAt)/motion.duration)) : 0;
-    if (motion && fraction>=1) return;
-    // Start from rest, then glide at one steady speed: the head leads and the tail
-    // follows the same line, with no slow-down while the arrow is still on the cube.
-    const ramp = .1, cruise = 1/(1-ramp/2);
-    const eased = fraction < ramp ? cruise*fraction*fraction/(2*ramp) : cruise*(fraction-ramp/2);
-    const shape = Core.getEscapeShape(arrow,level.size,motion ? motion.distance*eased : 0);
-    const points = shape.points.map(p=>project(pointOnFace(face,p.x,p.y,1.019)));
-    const {direction,head:headPos} = shape;
-    const head=(x,y)=>project(pointOnFace(face,x,y,1.024));
-    const tip=head(headPos.x,headPos.y);
-    const isHint = arrow.id===hintedId && time<hintExpiry && !arrow.removed;
+    const motion=arrow.escape;
+    const fraction=motion?Math.max(0,Math.min(1,(time-motion.startedAt)/motion.duration)):0;
+    if(motion && fraction>=1)return;
+    const ramp=.1,cruise=1/(1-ramp/2);
+    const eased=fraction<ramp?cruise*fraction*fraction/(2*ramp):cruise*(fraction-ramp/2);
+    const shape=Core.getEscapeShape(arrow,level.size,motion?motion.distance*eased:0);
+    const mesh=Core.buildFlatArrowGeometry(shape.points,shape.direction,.23);
+    if(!mesh)return;
+    const points=shape.points.map(p=>project(pointOnFace(face,p.x,p.y,1.023)));
+    const [tip,wing1,wing2]=mesh.head.map(p=>project(pointOnFace(face,p.x,p.y,1.023)));
+    const isHint=arrow.id===hintedId && time<hintExpiry && !arrow.removed;
     const isHover=arrow.id===hoveredId && !arrow.removed;
     const isBad=(arrow.badUntil||0)>time;
-    const fb = blockFeedback && time<blockFeedback.until ? blockFeedback : null;
-    // The arrow that is leaving is the one vermilion mark on the board.
-    const color = motion?VERMILION:isBad?VERMILION:isHint?VERDIGRIS:progress.colorful?COLORS[FACES.indexOf(FACES.find(f=>f.id===face.id))]:INK;
-    // Keep black winding lines bold like the reference, while scaling down
-    // slightly in tightly packed high-density levels to preserve separation.
+    const fb=blockFeedback && time<blockFeedback.until?blockFeedback:null;
+    const color=motion?VERMILION:isBad?VERMILION:isHint?VERDIGRIS:
+      progress.colorful?COLORS[FACES.indexOf(FACES.find(f=>f.id===face.id))]:INK;
     const cellPitch=sceneScale*2/level.size;
-    const width=Core.arrowMetrics(cellPitch).width;
-    const behind=head(headPos.x-direction.x*.65,headPos.y-direction.y*.65);
-    const arrowHead=Core.buildArrowHead(tip,behind,width);
-    if(!arrowHead) return;
-    const {wing1,wing2,shaftEnd}=arrowHead;
-    // Stop the thick round-capped body at the wide triangular base;
-    // otherwise its rounded end masks the pointed head.
-    const shaftPoints=points.slice();
-    shaftPoints[shaftPoints.length-1]=shaftEnd;
+    // Touch tolerance remains generous even though the visible ink is
+    // projected onto a flat plane rather than drawn as a fixed-pixel stroke.
+    const width=Math.max(Core.arrowMetrics(cellPitch).width,cellPitch*.23);
     context.save();
-    // Keep the full arrow visible until the tail has crossed the cube edge.
     context.globalAlpha *= motion ? Math.min(1,(1-fraction)/.07) : 1;
-    if (isHint || isHover || isBad) {
-      drawSegment(shaftPoints,isBad?'#F6C6BA':isHint?'#9CD3C6':'#EBD9A6',width+9,isHint?.75:.7);
+    if(isHint || isHover || isBad) {
+      const halo=Core.buildFlatArrowGeometry(shape.points,shape.direction,.32);
+      paintFlatArrow(face,halo,isBad?'#F6C6BA':isHint?'#9CD3C6':'#EBD9A6',.65);
     }
-    if (fb && arrow.id===fb.blockerId) drawSegment(shaftPoints,AMBER,width+9,.5+.25*Math.sin(time*.016));
-    if (fb && arrow.id===fb.arrowId) {
-      // Show exactly why: the straight run ahead of the head, ending on the arrow in the way.
-      const stop=head(fb.cell.x+.5,fb.cell.y+.5);
+    if(fb && arrow.id===fb.blockerId){
+      const halo=Core.buildFlatArrowGeometry(shape.points,shape.direction,.32);
+      paintFlatArrow(face,halo,AMBER,.5+.25*Math.sin(time*.016));
+    }
+    if(fb && arrow.id===fb.arrowId){
+      const stop=project(pointOnFace(face,fb.cell.x+.5,fb.cell.y+.5,1.024));
       context.save();context.setLineDash([7,6]);
       drawSegment([tip,stop],VERMILION,Math.max(2.4,width*.45),.75+.25*Math.sin(time*.016));
       context.restore();
     }
-    drawSegment(shaftPoints,color,width);
-    // Paint the prominent filled head last, above any shaft/glow.
-    context.beginPath();
-    context.moveTo(tip.x,tip.y);
-    context.lineTo(wing1.x,wing1.y);
-    context.lineTo(wing2.x,wing2.y);
-    context.closePath();
-    context.fillStyle=color;
-    context.fill();
-    if (isHint) {
+    paintFlatArrow(face,mesh,color);
+    if(isHint){
       context.beginPath();context.arc(tip.x,tip.y,12+2*Math.sin(time*.008),0,TAU);
       context.strokeStyle='rgba(31,122,109,.6)';context.lineWidth=2;context.stroke();
     }
     context.restore();
-    if (!arrow.removed) selectedPoints.push({arrow,points,depth:rotateVector(face.normal)[2],tip,wing1,wing2,width});
+    if(!arrow.removed)selectedPoints.push({
+      arrow,face:face.id,points,depth:rotateVector(face.normal)[2],
+      tip,wing1,wing2,width
+    });
   }
 
   function draw(time) {
