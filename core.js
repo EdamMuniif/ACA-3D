@@ -278,5 +278,13 @@
     return level.arrows.filter(a => !a.removed && !isBlocked(a, level.arrows, level.size));
   }
 
-  return { FACE_IDS, LEVEL_COUNT, MAX_HEARTS, pickProjectedArrow, buildArrowHead, getLevelConfig, generateLevel, isBlocked, getBlocker, getDirection, getEscapeShape, availableArrows, calculateLevelScore, getScoreAward };
+  // Free rotation helpers. Angles are radians.
+  // nearestAngle: the angle equivalent to `goal` (mod a full turn) that is closest to `now`,
+  // so easing toward it never spins the long way round.
+  function nearestAngle(goal, now) { const t = Math.PI * 2; return goal + t * Math.round((now - goal) / t); }
+  // turnDirection: +1 when the cube is upright, -1 when it is upside down, so a sideways
+  // drag still follows the finger after the cube has been tipped over the top.
+  function turnDirection(pitch) { return Math.cos(pitch) < 0 ? -1 : 1; }
+
+  return { nearestAngle, turnDirection, FACE_IDS, LEVEL_COUNT, MAX_HEARTS, pickProjectedArrow, buildArrowHead, getLevelConfig, generateLevel, isBlocked, getBlocker, getDirection, getEscapeShape, availableArrows, calculateLevelScore, getScoreAward };
 });

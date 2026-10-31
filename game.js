@@ -50,6 +50,11 @@
   let hearts = Core.MAX_HEARTS;
   let yaw = -.66, pitch = .43;
   let desiredYaw = yaw;
+  let desiredPitch = pitch;
+  let lastEmptyTap = 0;
+  // Upside down, the same finger motion must turn the cube the other way.
+  const flip = () => Core.turnDirection(pitch);
+  function recenterView() { desiredYaw = Core.nearestAngle(-.66,yaw); desiredPitch = Core.nearestAngle(.43,pitch); }
   let drag = null;
   let hoveredId = null;
   let hintedId = null, hintExpiry = 0;
@@ -205,7 +210,7 @@
     level = Core.generateLevel(currentLevel);
     hearts = Core.MAX_HEARTS; hintsUsed = 0; lastScoreAward = 0; lastLevelScore = 0;
     hoveredId = null; hintedId = null;
-    yaw = -.66; pitch = .43; desiredYaw = yaw;
+    yaw = -.66; pitch = .43; desiredYaw = yaw; desiredPitch = pitch;
     $('toast').classList.remove('visible');
     hideModal();
     updateHUD(); renderLevels();
@@ -348,6 +353,14 @@
       const difference=desiredYaw-yaw;
       if (Math.abs(difference)>.001) yaw += difference * Math.min(1,elapsed*.013);
       else yaw=desiredYaw;
+      const tilt=desiredPitch-pitch;
+      if (Math.abs(tilt)>.001) pitch += tilt * Math.min(1,elapsed*.013);
+      else {
+        pitch=desiredPitch;
+        // Keep the angles small after many full turns.
+        const turns=TAU*Math.round(pitch/TAU);
+        pitch-=turns; desiredPitch-=turns;
+      }
     }
     context.clearRect(0,0,sceneWidth,sceneHeight);
     drawCubeShadow();
@@ -383,7 +396,7 @@
     const p=canvasCoords(event);
     drag={x:p.x,y:p.y,lastX:p.x,lastY:p.y,moved:false,
       startArrow:hitArrow(p.x,p.y,event.pointerType),pointerType:event.pointerType};
-    desiredYaw=yaw;hoveredId=null;
+    desiredYaw=yaw;desiredPitch=pitch;hoveredId=null;
     canvas.setPointerCapture(event.pointerId);
   });
   canvas.addEventListener('pointermove',event=>{
@@ -393,8 +406,8 @@
       const dx=p.x-drag.lastX,dy=p.y-drag.lastY;
       if (Math.hypot(p.x-drag.x,p.y-drag.y)>(drag.pointerType==='mouse'?6:12)) drag.moved=true;
       if (drag.moved) {
-        yaw+=dx*.009;desiredYaw=yaw;
-        pitch=Math.max(-1.38,Math.min(1.38,pitch+dy*.008));
+        yaw+=dx*.009*flip();desiredYaw=yaw;
+        pitch+=dy*.008;desiredPitch=pitch;
         canvas.classList.add('dragging');
       }
       drag.lastX=p.x;drag.lastY=p.y;
@@ -415,7 +428,11 @@
       // if the player's finger drifted slightly without rotating the cube.
       const arrow=press.startArrow || hitArrow(p.x,p.y,event.pointerType);
       if (arrow) attemptRelease(arrow);
-      else setToast('Tap anywhere on a visible arrow to release it.');
+      else {
+        const now=performance.now();
+        if (now-lastEmptyTap<340) { recenterView(); lastEmptyTap=0; setToast('View reset.'); }
+        else { lastEmptyTap=now; setToast('Tap anywhere on a visible arrow to release it.'); }
+      }
     }
   });
   canvas.addEventListener('pointercancel',()=>{drag=null;canvas.classList.remove('dragging');});
@@ -423,9 +440,9 @@
   canvas.addEventListener('keydown',event=>{
     if (modalOpen) return;
     if (event.key==='ArrowLeft'||event.key==='ArrowRight') {
-      event.preventDefault();desiredYaw+=(event.key==='ArrowLeft'?.4:-.4);
+      event.preventDefault();desiredYaw+=(event.key==='ArrowLeft'?.4:-.4)*flip();
     } else if (event.key==='ArrowUp'||event.key==='ArrowDown') {
-      event.preventDefault();pitch=Math.max(-1.38,Math.min(1.38,pitch+(event.key==='ArrowUp'?.24:-.24)));
+      event.preventDefault();desiredPitch+=(event.key==='ArrowUp'?.24:-.24);
     } else if (event.key==='h'||event.key==='H') { event.preventDefault();showHint(); }
   });
   function attemptRelease(arrow) {
@@ -483,7 +500,7 @@
       }[picked.face];
       // Choose the nearest equivalent full rotation, then face the target.
       desiredYaw=goal[0]+TAU*Math.round((yaw-goal[0])/TAU);
-      pitch=goal[1];
+      desiredPitch=Core.nearestAngle(goal[1],pitch);
       setToast('Rotating to reveal a free arrow.','success');
     } else setToast('Highlighted arrow has a clear exit!','success');
     hintsUsed++;
@@ -574,7 +591,7 @@
       buttons:[{text:'Settings',action:openSettings},{text:'Start playing',primary:true,action:hideModal}]});
     const help=$('modalExtra');
     for (const [title,description] of [
-      ['01 · Rotate','Drag left/right/up/down to inspect every side. You can use the Left / Right buttons too.'],
+      ['01 · Rotate','Drag in any direction to turn the cube all the way round, top and bottom included. Double-tap empty space to reset the view. The Left / Right buttons turn it a quarter at a time.'],
       ['02 · Check the exit','Each arrow follows its own bends head-first, with the tail following behind. It exits straight beyond its arrowhead. The cells ahead of that head must be clear.'],
       ['03 · Release',`Tap anywhere along a visible arrow body or arrowhead. A blocked move loses one of your ${Core.MAX_HEARTS} hearts. Hints are available.`],
       ['04 · Complete','Clear the cube to unlock the next level and score points. More arrows, higher difficulty, and remaining hearts increase score. Each hint deducts 15 points. Replaying only adds improvements over your best score.']
@@ -589,8 +606,8 @@
   $('saveNameBtn').addEventListener('click',savePlayerName);
   $('playerNameInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();savePlayerName();$('playBtn').focus();}});
   $('playerNameInput').addEventListener('change',savePlayerName);
-  $('rotateLeftBtn').addEventListener('click',()=>desiredYaw+=Math.PI/2);
-  $('rotateRightBtn').addEventListener('click',()=>desiredYaw-=Math.PI/2);
+  $('rotateLeftBtn').addEventListener('click',()=>desiredYaw+=Math.PI/2*flip());
+  $('rotateRightBtn').addEventListener('click',()=>desiredYaw-=Math.PI/2*flip());
   $('resetBtn').addEventListener('click',()=>{startLevel(currentLevel);setToast('Level restarted.');});
   $('hintBtn').addEventListener('click',showHint);
   $('soundBtn').addEventListener('click',toggleSound);
