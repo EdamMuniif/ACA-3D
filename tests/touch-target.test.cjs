@@ -56,3 +56,37 @@ test('five-heart game and touch-friendly dense arrow rendering are wired',()=>{
   assert.match(html,/aria-label="5 hearts remaining"/);
   assert.match(html,/Five hearts per attempt/);
 });
+
+test('arrowheads remain visibly wider than thick shafts in any direction',()=>{
+  const stroke=12;
+  for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1]]){
+    const tip={x:120,y:120},behind={x:120-dx*30,y:120-dy*30};
+    const head=Core.buildArrowHead(tip,behind,stroke);
+    assert.ok(head,'geometry generated');
+    const headLength=Math.hypot(tip.x-head.shaftEnd.x,tip.y-head.shaftEnd.y);
+    const baseWidth=Math.hypot(head.wing1.x-head.wing2.x,head.wing1.y-head.wing2.y);
+    assert.ok(headLength>=stroke*1.8,'head extends beyond round shaft cap');
+    assert.ok(baseWidth>stroke*2.5,'triangular head is clearly wider than shaft');
+    assert.ok(Math.hypot(head.wing1.x-head.shaftEnd.x,head.wing1.y-head.shaftEnd.y)>stroke,'visible shoulder');
+    const inside={x:tip.x-(tip.x-head.shaftEnd.x)*.35,y:tip.y-(tip.y-head.shaftEnd.y)*.35};
+    const item={arrow:{id:'arrow',removed:false},width:stroke,depth:1,points:[behind,head.shaftEnd],...head};
+    assert.equal(Core.pickProjectedArrow(inside.x,inside.y,[item],5),item.arrow);
+  }
+});
+test('arrowhead geometry scales from narrow to bold bodies, with safe invalid input',()=>{
+  const thin=Core.buildArrowHead({x:50,y:50},{x:30,y:50},4.5);
+  const bold=Core.buildArrowHead({x:50,y:50},{x:30,y:50},12);
+  assert.ok(Math.hypot(bold.wing1.x-bold.wing2.x,bold.wing1.y-bold.wing2.y)>
+    Math.hypot(thin.wing1.x-thin.wing2.x,thin.wing1.y-thin.wing2.y));
+  assert.equal(Core.buildArrowHead({x:10,y:10},{x:10,y:10},12),null);
+  assert.equal(Core.buildArrowHead({x:NaN,y:0},{x:1,y:0},12),null);
+});
+test('renderer draws shaft to triangle base rather than covering tip with a round cap',()=>{
+  const game=fs.readFileSync(path.join(__dirname,'../game.js'),'utf8');
+  assert.match(game,/Core\.buildArrowHead\(tip,behind,width\)/);
+  assert.match(game,/shaftPoints\[shaftPoints\.length-1\]=shaftEnd/);
+  assert.match(game,/drawSegment\(shaftPoints,color,width\)/);
+  assert.match(game,/context\.lineTo\(wing1\.x,wing1\.y\)/);
+  assert.match(game,/context\.lineTo\(wing2\.x,wing2\.y\)/);
+  assert.match(game,/selectedPoints\.push\(\{arrow,points,depth:.*tip,wing1,wing2,width\}\)/);
+});

@@ -210,6 +210,27 @@
     return {best:updated,awarded:updated-oldBest};
   }
 
+  // Build a readable screen-space arrowhead. A triangle defined only in
+  // grid units gets visually swallowed after the shaft is thickened and can
+  // collapse under 3D foreshortening. Pixel-space geometry stays legible.
+  function buildArrowHead(tip,behind,width) {
+    const vx=Number(tip?.x)-Number(behind?.x);
+    const vy=Number(tip?.y)-Number(behind?.y);
+    const length=Math.hypot(vx,vy);
+    if (!Number.isFinite(length) || length<0.001) return null;
+    const ux=vx/length,uy=vy/length;
+    const stroke=Math.max(1,Number(width)||1);
+    const headLength=Math.max(13,Math.min(29,stroke*2.15));
+    const halfWidth=Math.max(8,Math.min(19,stroke*1.32));
+    const shaftEnd={x:tip.x-ux*headLength,y:tip.y-uy*headLength};
+    return {
+      tip:{x:tip.x,y:tip.y},
+      shaftEnd,
+      wing1:{x:shaftEnd.x-uy*halfWidth,y:shaftEnd.y+ux*halfWidth},
+      wing2:{x:shaftEnd.x+uy*halfWidth,y:shaftEnd.y-ux*halfWidth}
+    };
+  }
+
   // Screen-space selection: the entire visible polyline, including its
   // arrowhead, is tappable. Pick the nearest stroke instead of requiring
   // an exact tap on the tip; slight depth preference breaks visual ties.
@@ -257,5 +278,5 @@
     return level.arrows.filter(a => !a.removed && !isBlocked(a, level.arrows, level.size));
   }
 
-  return { FACE_IDS, LEVEL_COUNT, MAX_HEARTS, pickProjectedArrow, getLevelConfig, generateLevel, isBlocked, getBlocker, getDirection, getEscapeShape, availableArrows, calculateLevelScore, getScoreAward };
+  return { FACE_IDS, LEVEL_COUNT, MAX_HEARTS, pickProjectedArrow, buildArrowHead, getLevelConfig, generateLevel, isBlocked, getBlocker, getDirection, getEscapeShape, availableArrows, calculateLevelScore, getScoreAward };
 });
