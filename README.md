@@ -51,8 +51,9 @@ through Level 15 (150 arrows). All generated levels have deterministic seeds and
 valid escape sequences; they are **not exact reconstructions of the original app's
 proprietary per-arrow layouts**.
 
-Rendering uses lighter translucent cube faces, black arrow lines, and a
-glowing blue head-first escape highlight. Existing heart, hint, save, sound,
+Rendering uses a vellum-paper cube with bold ink arrows. The arrow that is leaving
+turns vermilion and glides head-first, tail following. A blocked tap draws a dashed
+vermilion lane to the arrow in the way and rings that arrow in amber. Existing heart, hint, save, sound,
 and touch controls remain available. The escape check now matches the visible head-first, tail-following animation. It is still a same-face model; multi-face paths and the original game's hidden collision rules are not confirmed from video.
 
 ## Design & puzzle guarantees
@@ -66,10 +67,16 @@ Each generated arrow is admitted only if it can escape **with all previously pla
 
 This is a standalone interpretation of the arrow-escape puzzle concept, not a pixel-for-pixel copy of another game's proprietary art or level data.
 
+## Visual design
+
+The "Orthographic Quiet" look (vellum paper, ink arrows, one rationed vermilion accent,
+Instrument Serif and Instrument Sans) is described in `design/philosophy.md`; key art is
+`design/key-art.png`. Fonts are bundled in `fonts/` (SIL OFL) so it works offline.
+
 ## Test puzzle logic
 
 ```bash
-node --test tests/logic.test.cjs
+node --test tests/*.cjs
 ```
 
 No packages are required. Browser smoke checks can be run with any modern Chromium, Firefox, or Safari browser.
