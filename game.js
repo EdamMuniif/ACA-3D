@@ -392,22 +392,26 @@
     context.clearRect(0,0,sceneWidth,sceneHeight);
     drawCubeShadow();
     selectedPoints=[];ghostPoints=[];
-    // Far faces show through the glass as faint ghosts, so the player always knows
-    // what is behind. They are not releasable; tapping one turns that face forward.
+    // Preserve faint, tappable far-side ghosts only while they have enough
+    // projected surface area to be recognizable. Near edge-on views collapse
+    // multiple thick arrows into one strip, so do not render or pick them.
     for (const face of FACES) {
       const view=rotateVector(face.normal)[2];
-      if (view>.015) continue;
+      const opacity=Core.faceArrowOpacity(view).ghost;
+      if (opacity<.015) continue;
       const keep=selectedPoints.length;
-      context.save();context.globalAlpha=.17;
+      context.save();context.globalAlpha=opacity;
       for (const arrow of level.arrows) if (arrow.face===face.id && !arrow.removed) drawArrow(arrow,face,time);
       context.restore();
       ghostPoints.push(...selectedPoints.splice(keep));
     }
     for (const face of faceNormals()) {
       drawFace(face);
-      // Arrows on a face seen edge-on fade out instead of smearing into a sliver.
-      const k=Math.max(0,Math.min(1,(face.view-.015)/.5));
-      context.save();context.globalAlpha=.05+.95*k*k*(3-2*k);
+      // The cube outline still rotates through the horizon; its arrows fade
+      // smoothly away before perspective turns their entire body edge-on.
+      const opacity=Core.faceArrowOpacity(face.view).front;
+      if (opacity<.06) continue;
+      context.save();context.globalAlpha=opacity;
       for (const arrow of level.arrows) if (arrow.face===face.id) drawArrow(arrow,face,time);
       context.restore();
     }

@@ -168,3 +168,9 @@ scoring and the game logic. Responsive visual testing on actual devices is recom
 ## V10 — visible triangular arrowheads
 
 A regression in V9 made the winding arrow shafts thick without increasing their head sizes. V10 corrects that drawing mismatch: each arrow has a clearly distinguishable, filled, screen-space triangular head, sized relative to the stroke. The round-capped shaft ends at the triangle base so it cannot cover the point. Head geometry stays legible as the cube rotates; arrow lines, tails, head triangles, and bend segments remain touch targets. There are no changes to the puzzle collision rules, five-heart gameplay, saved scores, player names, or level progression. Regression tests cover multiple arrow directions, head geometry and touch detection.
+
+## V19: Edge-on cube rendering correction
+
+When the cube rotates almost edge-on, full-width arrow strokes and filled triangular heads from multiple paths can compress into an unreadable line. The game now fades arrow artwork on both near and far faces before their visible surface area collapses. The cube outline continues to rotate normally; when the face becomes readable again, its arrows fade back in. Rear-face ghost arrows remain available for tap-to-turn only while their projected face has enough visible area. Collision rules, unrestricted 3D rotation, simultaneous escapes, five hearts, scores, levels and save keys are unchanged.
+
+The pure `faceArrowOpacity(view)` helper in `core.js` is covered by `tests/face-visibility.test.cjs`, which also checks that the renderer applies its opacity thresholds to both visible and ghost passes.
