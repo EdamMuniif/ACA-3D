@@ -541,3 +541,36 @@ button:focus-visible,canvas:focus-visible,.name-entry input:focus-visible { outl
 .help-copy strong { color:var(--ink); }
 .setting-danger { background:#F4E0D8; border-color:#E8B9A9; color:#B23A21; }
 @media(max-width:700px){ .brand-title{font-size:clamp(22px,6vw,26px)} .level-row h1{font-size:32px} .home-hero h1{font-size:clamp(44px,13vw,60px)} }
+
+/* ── Play-first screen: while a level is open the cube gets the screen. ── */
+@media(max-width:700px){
+  body.playing .topbar{min-height:52px;padding:8px 12px}
+  body.playing .brand-title,body.playing .brand-subtitle,body.playing .offline-chip{display:none}
+  body.playing .topbar{display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:8px}
+  body.playing .brand{flex:0 0 auto;width:auto}
+  body.playing .header-controls{display:flex;width:auto;flex:1 1 auto;min-width:0;justify-content:flex-end;gap:6px;grid-template-columns:none}
+  body.playing .header-icon{flex:0 0 34px}
+  body.playing .top-nav-btn{height:34px;min-height:34px;padding:0 14px;font-size:13px;flex:0 0 auto;width:auto}
+  body.playing .level-count{display:none}
+  body.playing #levelTitle{display:flex;align-items:baseline;gap:6px;white-space:nowrap;margin:0}
+    body.playing .arrow-counter{white-space:nowrap}
+  body.playing .brand-icon{width:34px;height:34px;border-radius:10px}
+  body.playing .brand-icon img{width:26px;height:26px}
+  body.playing .header-icon{height:34px;width:34px}
+  body.playing .game-layout{padding:6px 8px 8px;gap:0}
+  body.playing .play-panel{padding:6px 6px 8px;border:0;background:transparent;border-radius:0}
+  body.playing .eyebrow,body.playing .player-score-line,body.playing .progress-track,
+  body.playing .scene-top-note,body.playing .stage-bottom-note,body.playing .compass,
+  body.playing .sidebar,body.playing .page-footer{display:none}
+  body.playing .game-hud{flex-direction:row;align-items:center;justify-content:space-between;gap:8px;padding:2px 4px 6px}
+  body.playing .level-row{display:flex;align-items:baseline;gap:8px}
+  body.playing .level-row h1{font-size:26px;line-height:1}
+  body.playing .hud-right{display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;gap:10px}
+  body.playing .hearts{font-size:20px;gap:1px}
+  body.playing .arrow-counter{font-size:13px;padding:4px 8px}
+  body.playing .stage{height:calc(100vh - 196px);height:calc(100dvh - 196px);min-height:360px;max-height:none;border:0;background:transparent}
+  body.playing .stage-glow{display:none}
+  body.playing .game-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding-top:6px}
+  body.playing .game-actions .game-button{min-height:48px;font-size:12px;padding:0 4px}
+  body.playing .game-actions .button-icon{margin-right:2px}
+}
