@@ -220,14 +220,27 @@
     if (!Number.isFinite(length) || length<0.001) return null;
     const ux=vx/length,uy=vy/length;
     const stroke=Math.max(1,Number(width)||1);
-    const headLength=Math.max(13,Math.min(29,stroke*2.15));
-    const halfWidth=Math.max(8,Math.min(19,stroke*1.32));
+    const headLength=Math.max(9,Math.min(19,stroke*3.1));
+    const halfWidth=Math.max(5,Math.min(12,stroke*1.55));
     const shaftEnd={x:tip.x-ux*headLength,y:tip.y-uy*headLength};
     return {
       tip:{x:tip.x,y:tip.y},
       shaftEnd,
       wing1:{x:shaftEnd.x-uy*halfWidth,y:shaftEnd.y+ux*halfWidth},
       wing2:{x:shaftEnd.x+uy*halfWidth,y:shaftEnd.y-ux*halfWidth}
+    };
+  }
+
+  // Sizes come from the grid, not from fixed pixels: a head wider than one cell would
+  // hide the lane beside it, which is what made dense levels unreadable.
+  function sceneScale(width,height) { return Math.min(width*.325,height*.27,300); }
+  function arrowMetrics(cellPitch) {
+    const width=Math.max(2.4,Math.min(8,(Number(cellPitch)||0)*.30));
+    const head=buildArrowHead({x:1,y:0},{x:0,y:0},width);
+    return {
+      width,
+      headLength:Math.hypot(head.tip.x-head.shaftEnd.x,head.tip.y-head.shaftEnd.y),
+      headWidth:Math.hypot(head.wing1.x-head.wing2.x,head.wing1.y-head.wing2.y)
     };
   }
 
@@ -286,5 +299,5 @@
   // drag still follows the finger after the cube has been tipped over the top.
   function turnDirection(pitch) { return Math.cos(pitch) < 0 ? -1 : 1; }
 
-  return { nearestAngle, turnDirection, FACE_IDS, LEVEL_COUNT, MAX_HEARTS, pickProjectedArrow, buildArrowHead, getLevelConfig, generateLevel, isBlocked, getBlocker, getDirection, getEscapeShape, availableArrows, calculateLevelScore, getScoreAward };
+  return { nearestAngle, turnDirection, FACE_IDS, LEVEL_COUNT, MAX_HEARTS, pickProjectedArrow, buildArrowHead, arrowMetrics, sceneScale, getLevelConfig, generateLevel, isBlocked, getBlocker, getDirection, getEscapeShape, availableArrows, calculateLevelScore, getScoreAward };
 });

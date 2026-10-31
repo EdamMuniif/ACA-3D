@@ -61,6 +61,7 @@
   let hoveredId = null;
   let hintedId = null, hintExpiry = 0;
   let selectedPoints = [];
+  let ghostPoints = [];
   let modalOpen = false;
   let lastToastTimer = 0;
   let activeGeneration = 0;
@@ -144,6 +145,7 @@
     hideModal();
     updateProfileDisplays();
     if(which==='levels') renderLevels();
+    document.body.classList.toggle('playing',which==='play');
     if(which==='play') { refreshSize(); requestAnimationFrame(refreshSize); }
     window.scrollTo(0,0);
   }
@@ -313,7 +315,7 @@
     // Keep black winding lines bold like the reference, while scaling down
     // slightly in tightly packed high-density levels to preserve separation.
     const cellPitch=sceneScale*2/level.size;
-    const width=Math.max(4.5,Math.min(12,cellPitch*.46));
+    const width=Core.arrowMetrics(cellPitch).width;
     const behind=head(headPos.x-direction.x*.65,headPos.y-direction.y*.65);
     const arrowHead=Core.buildArrowHead(tip,behind,width);
     if(!arrowHead) return;
@@ -324,7 +326,7 @@
     shaftPoints[shaftPoints.length-1]=shaftEnd;
     context.save();
     // Keep the full arrow visible until the tail has crossed the cube edge.
-    context.globalAlpha = motion ? Math.min(1,(1-fraction)/.07) : 1;
+    context.globalAlpha *= motion ? Math.min(1,(1-fraction)/.07) : 1;
     if (isHint || isHover || isBad) {
       drawSegment(shaftPoints,isBad?'#F6C6BA':isHint?'#9CD3C6':'#EBD9A6',width+9,isHint?.75:.7);
     }
@@ -389,11 +391,25 @@
     lastFrameKey = frameKey;
     context.clearRect(0,0,sceneWidth,sceneHeight);
     drawCubeShadow();
-    const faces=faceNormals();
-    selectedPoints=[];
-    for (const face of faces) {
+    selectedPoints=[];ghostPoints=[];
+    // Far faces show through the glass as faint ghosts, so the player always knows
+    // what is behind. They are not releasable; tapping one turns that face forward.
+    for (const face of FACES) {
+      const view=rotateVector(face.normal)[2];
+      if (view>.015) continue;
+      const keep=selectedPoints.length;
+      context.save();context.globalAlpha=.17;
+      for (const arrow of level.arrows) if (arrow.face===face.id && !arrow.removed) drawArrow(arrow,face,time);
+      context.restore();
+      ghostPoints.push(...selectedPoints.splice(keep));
+    }
+    for (const face of faceNormals()) {
       drawFace(face);
+      // Arrows on a face seen edge-on fade out instead of smearing into a sliver.
+      const k=Math.max(0,Math.min(1,(face.view-.015)/.5));
+      context.save();context.globalAlpha=.05+.95*k*k*(3-2*k);
       for (const arrow of level.arrows) if (arrow.face===face.id) drawArrow(arrow,face,time);
+      context.restore();
     }
   }
   function refreshSize() {
@@ -404,7 +420,7 @@
     const w=Math.round(sceneWidth*ratio),h=Math.round(sceneHeight*ratio);
     if (canvas.width!==w||canvas.height!==h) {canvas.width=w;canvas.height=h;}
     context.setTransform(ratio,0,0,ratio,0,0);
-    sceneScale=Math.min(sceneWidth*.285,sceneHeight*.27,225);
+    sceneScale=Core.sceneScale(sceneWidth,sceneHeight);
     // Resizing clears the canvas, including a DPR-only change that keeps the CSS size.
     lastFrameKey='';
   }
@@ -454,7 +470,9 @@
       // Use the closest segment on release, or the original touched segment
       // if the player's finger drifted slightly without rotating the cube.
       const arrow=press.startArrow || hitArrow(p.x,p.y,event.pointerType);
+      const ghost=arrow?null:Core.pickProjectedArrow(p.x,p.y,ghostPoints,10);
       if (arrow) attemptRelease(arrow);
+      else if (ghost) { turnToFace(ghost.face); setToast('Turning to the far side.'); }
       else {
         const now=performance.now();
         if (now-lastEmptyTap<340) { recenterView(); lastEmptyTap=0; setToast('View reset.'); }
@@ -516,6 +534,17 @@
     persist();updateHUD();renderLevels();
     showWinModal();
   }
+  // Yaw/pitch that bring each face to the front, used by hints and by tapping a ghost arrow.
+  const FACE_GOALS = {
+    front:[0,.28],right:[-Math.PI/2,.28],back:[Math.PI,.28],
+    left:[Math.PI/2,.28],top:[0,1.20],bottom:[0,-1.20]
+  };
+  function turnToFace(faceId) {
+    const goal = FACE_GOALS[faceId];
+    if (!goal) return;
+    desiredYaw=goal[0]+TAU*Math.round((yaw-goal[0])/TAU);
+    desiredPitch=Core.nearestAngle(goal[1],pitch);
+  }
   function showHint() {
     if (modalOpen || !level) return;
     const options=Core.availableArrows(level);
@@ -525,13 +554,9 @@
     if (!picked) {
       // Align the nearest face with the camera, so the hint is actually visible.
       picked=options[0];
-      const goal = {
-        front:[0,.28],right:[-Math.PI/2,.28],back:[Math.PI,.28],
-        left:[Math.PI/2,.28],top:[0,1.20],bottom:[0,-1.20]
-      }[picked.face];
+      const goal = FACE_GOALS[picked.face];
       // Choose the nearest equivalent full rotation, then face the target.
-      desiredYaw=goal[0]+TAU*Math.round((yaw-goal[0])/TAU);
-      desiredPitch=Core.nearestAngle(goal[1],pitch);
+      turnToFace(picked.face);
       setToast('Rotating to reveal a free arrow.','success');
     } else setToast('Highlighted arrow has a clear exit!','success');
     hintsUsed++;

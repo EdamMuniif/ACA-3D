@@ -52,13 +52,13 @@ test('five-heart game and touch-friendly dense arrow rendering are wired',()=>{
   assert.match(game,/Core\.pickProjectedArrow/);
   assert.match(game,/startArrow:hitArrow/);
   assert.match(game,/press\.startArrow \|\| hitArrow/);
-  assert.match(game,/Math\.min\(12,cellPitch\*\.46\)/);
+  assert.match(game,/Core\.arrowMetrics\(cellPitch\)\.width/);
   assert.match(html,/aria-label="5 hearts remaining"/);
   assert.match(html,/Five hearts per attempt/);
 });
 
 test('arrowheads remain visibly wider than thick shafts in any direction',()=>{
-  const stroke=12;
+  const stroke=6;
   for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1]]){
     const tip={x:120,y:120},behind={x:120-dx*30,y:120-dy*30};
     const head=Core.buildArrowHead(tip,behind,stroke);
@@ -75,7 +75,7 @@ test('arrowheads remain visibly wider than thick shafts in any direction',()=>{
 });
 test('arrowhead geometry scales from narrow to bold bodies, with safe invalid input',()=>{
   const thin=Core.buildArrowHead({x:50,y:50},{x:30,y:50},4.5);
-  const bold=Core.buildArrowHead({x:50,y:50},{x:30,y:50},12);
+  const bold=Core.buildArrowHead({x:50,y:50},{x:30,y:50},8);
   assert.ok(Math.hypot(bold.wing1.x-bold.wing2.x,bold.wing1.y-bold.wing2.y)>
     Math.hypot(thin.wing1.x-thin.wing2.x,thin.wing1.y-thin.wing2.y));
   assert.equal(Core.buildArrowHead({x:10,y:10},{x:10,y:10},12),null);
@@ -109,4 +109,27 @@ test('rendering skips unchanged frames and avoids per-frame blur shadows',()=>{
   assert.doesNotMatch(js,/shadowBlur/,'canvas shadowBlur is too slow on phones when repainted every frame');
   // A resize clears the canvas, so the cached frame must be invalidated with it.
   assert.match(js,/function refreshSize\(\)[\s\S]*?lastFrameKey='';\s*\}/);
+});
+
+test('arrowheads never outgrow their grid cell, so lanes stay readable (sizes 5-14)',()=>{
+  const stageWidth=336,stageHeight=520;
+  const scale=Core.sceneScale(stageWidth,stageHeight);
+  for(let size=5;size<=14;size++){
+    const cellPitch=scale*2/size;
+    const m=Core.arrowMetrics(cellPitch);
+    assert.ok(m.headWidth<=cellPitch*.95,`size ${size}: head ${m.headWidth.toFixed(1)}px vs cell ${cellPitch.toFixed(1)}px`);
+    assert.ok(m.width<m.headWidth,'shaft thinner than head');
+  }
+  assert.ok(Core.arrowMetrics(1000).width<=8,'shaft is capped on huge cells');
+});
+
+test('play-first screen: ghost far faces, glancing fade and tap-to-turn are wired',()=>{
+  const game=fs.readFileSync(path.join(__dirname,'../game.js'),'utf8');
+  const css=fs.readFileSync(path.join(__dirname,'../styles.css'),'utf8');
+  assert.match(game,/document\.body\.classList\.toggle\('playing',which==='play'\)/);
+  assert.match(game,/ghostPoints\.push\(\.\.\.selectedPoints\.splice\(keep\)\)/,'ghost arrows are never releasable');
+  assert.match(game,/pickProjectedArrow\(p\.x,p\.y,ghostPoints/);
+  assert.match(game,/turnToFace\(ghost\.face\)/);
+  assert.match(game,/globalAlpha \*= motion/,'escape fade must multiply the face fade');
+  assert.match(css,/body\.playing \.stage\{/);
 });
