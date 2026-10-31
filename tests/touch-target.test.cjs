@@ -224,6 +224,8 @@ test('compact HUD title size beats the ID-based title rule and fit scaling is wi
   assert.match(css,/body\.playing #levelTitle[^{]*\{font-size:26px/);
   assert.match(game,/Core\.fitSceneScale\(baseScale/);
   assert.match(game,/fitScene\(\);\s*\/\/ Repaint only when something visible changed/);
+});
+
 test('home screen folds player profile and how-it-works behind buttons',()=>{
   const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
   const game=fs.readFileSync(path.join(__dirname,'../game.js'),'utf8');
