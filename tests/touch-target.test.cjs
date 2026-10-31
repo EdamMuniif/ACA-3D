@@ -197,3 +197,17 @@ test('renderer keeps face geometry but culls edge-on arrows and rear-edge ghosts
   assert.match(game,/faceNormals\(\)\.filter\(f=>Core\.faceArrowOpacity\(f\.view\)>\.2\)/,
     'hints should route to a face with actually visible arrows');
 });
+
+test('home screen folds player profile and how-it-works behind buttons',()=>{
+  const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
+  const game=fs.readFileSync(path.join(__dirname,'../game.js'),'utf8');
+  for(const id of ['profile','rules']){
+    assert.match(html,new RegExp(`id="${id}Toggle"[^>]*aria-expanded="false"[^>]*aria-controls="${id}Panel"`));
+    assert.match(html,new RegExp(`id="${id}Panel" hidden`),`${id} panel starts folded`);
+  }
+  // The name field and greeting that game.js reads must survive the restructure.
+  for(const id of ['playerNameInput','saveNameBtn','homePlayerGreeting','homePoints','homeCompleted'])
+    assert.match(html,new RegExp(`id="${id}"`));
+  assert.match(game,/\['profile','rules'\]\.forEach/);
+  assert.match(game,/aria-expanded',String\(open\)/);
+});

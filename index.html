@@ -59,13 +59,6 @@
         </div>
       </section>
       <section class="home-bottom" aria-label="Player progress and rules">
-        <div class="profile-card">
-          <div class="section-kicker">PLAYER PROFILE</div>
-          <h2>Ready, <span id="homePlayerGreeting">Player</span>?</h2>
-          <label for="playerNameInput">Your name</label>
-          <div class="name-entry"><input id="playerNameInput" maxlength="24" autocomplete="nickname" placeholder="Enter your name" value="Player"><button id="saveNameBtn" type="button">Save</button></div>
-          <p>Your name and score stay on this device.</p>
-        </div>
         <div class="home-stats-card">
           <div class="section-kicker">YOUR PROGRESS</div>
           <div class="home-stats-grid">
@@ -75,13 +68,26 @@
           </div>
           <div class="home-progress-rail"><span id="homeProgressFill"></span></div>
         </div>
-        <div class="rules-card">
+        <div class="home-fold">
+          <button type="button" class="home-toggle" id="profileToggle" aria-expanded="false" aria-controls="profilePanel"><span>Player profile</span><span class="home-toggle-mark" aria-hidden="true"></span></button>
+        <div class="profile-card home-panel" id="profilePanel" hidden>
+          <div class="section-kicker">PLAYER PROFILE</div>
+          <h2>Ready, <span id="homePlayerGreeting">Player</span>?</h2>
+          <label for="playerNameInput">Your name</label>
+          <div class="name-entry"><input id="playerNameInput" maxlength="24" autocomplete="nickname" placeholder="Enter your name" value="Player"><button id="saveNameBtn" type="button">Save</button></div>
+          <p>Your name and score stay on this device.</p>
+        </div>
+        </div>
+        <div class="home-fold">
+          <button type="button" class="home-toggle" id="rulesToggle" aria-expanded="false" aria-controls="rulesPanel"><span>How it works</span><span class="home-toggle-mark" aria-hidden="true"></span></button>
+        <div class="rules-card home-panel" id="rulesPanel" hidden>
           <div class="section-kicker">HOW IT WORKS</div>
           <h2>Four quick rules</h2>
           <p><b>01</b> Rotate the cube to inspect all faces.</p>
           <p><b>02</b> Tap only an arrow with a clear exit.</p>
           <p><b>03</b> Five hearts per attempt. Tap anywhere on an arrow; hints lower your score.</p>
           <p><b>04</b> Clear the cube to earn points and unlock the next level.</p>
+        </div>
         </div>
       </section>
     </main>
