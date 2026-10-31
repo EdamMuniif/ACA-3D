@@ -133,3 +133,30 @@ test('play-first screen: ghost far faces, glancing fade and tap-to-turn are wire
   assert.match(game,/globalAlpha \*= motion/,'escape fade must multiply the face fade');
   assert.match(css,/body\.playing \.stage\{/);
 });
+
+test('grazing-angle arrow geometry is not visible or selectable',()=>{
+  // The recorded bug shows a compressed pile of arrowheads at cube edges.
+  assert.equal(Core.faceArrowOpacity(0),0);
+  assert.equal(Core.faceArrowOpacity(.015),0);
+  assert.equal(Core.faceArrowOpacity(.20),0);
+  assert.equal(Core.faceArrowOpacity(.28),0);
+  assert.equal(Core.faceArrowOpacity(NaN),0);
+  assert.equal(Core.faceArrowOpacity(-1),0);
+  const subtle=Core.faceArrowOpacity(.35);
+  const mid=Core.faceArrowOpacity(.5);
+  assert.ok(subtle>0 && subtle<.15);
+  assert.ok(mid>.5 && mid<1);
+  assert.ok(subtle<mid);
+  assert.equal(Core.faceArrowOpacity(.66),1);
+  assert.equal(Core.faceArrowOpacity(.9),1);
+});
+
+test('renderer keeps face geometry but culls edge-on arrows and rear-edge ghosts',()=>{
+  const game=fs.readFileSync(path.join(__dirname,'../game.js'),'utf8');
+  assert.match(game,/drawFace\(face\);\s*const opacity=Core\.faceArrowOpacity\(face\.view\);\s*if \(opacity<=0\) continue;/);
+  assert.match(game,/context\.globalAlpha \*= opacity/);
+  assert.match(game,/if \(view>-\.85\) continue;/,'back faces are ghosted only if directly away');
+  assert.match(game,/context\.globalAlpha=\.045/,'back-face ghosts cannot dominate the cube edges');
+  assert.match(game,/faceNormals\(\)\.filter\(f=>Core\.faceArrowOpacity\(f\.view\)>\.2\)/,
+    'hints should route to a face with actually visible arrows');
+});

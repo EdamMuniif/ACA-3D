@@ -168,3 +168,9 @@ scoring and the game logic. Responsive visual testing on actual devices is recom
 ## V10 — visible triangular arrowheads
 
 A regression in V9 made the winding arrow shafts thick without increasing their head sizes. V10 corrects that drawing mismatch: each arrow has a clearly distinguishable, filled, screen-space triangular head, sized relative to the stroke. The round-capped shaft ends at the triangle base so it cannot cover the point. Head geometry stays legible as the cube rotates; arrow lines, tails, head triangles, and bend segments remain touch targets. There are no changes to the puzzle collision rules, five-heart gameplay, saved scores, player names, or level progression. Regression tests cover multiple arrow directions, head geometry and touch detection.
+
+## V19 — 3D edge-on arrow visibility fix
+
+The user-provided rotation recording shows arrows collapsing into thick overlapping arrowhead bands along the silhouette of the cube. This is a rendering artifact from the projected perspective and large pixel-sized arrowheads, not a corrupted puzzle state.
+
+**Fix:** Keep the cube's face outlines and grids visible through 360-degree rotation, but cull arrows completely when their face's camera-facing normal component is 0.28 or below. Fade arrows smoothly to full opacity at 0.66. Extremely faint rear-face hints only display when the back face is substantially turned away (at most -0.85); grazing faces cannot create edge clutter. Hint targeting follows visible arrows. Player progress, five hearts, level geometry, collision logic, and release animations remain unchanged.

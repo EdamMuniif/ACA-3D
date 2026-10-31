@@ -291,6 +291,16 @@
     return level.arrows.filter(a => !a.removed && !isBlocked(a, level.arrows, level.size));
   }
 
+  // Face visibility is a 3D front-facing test, not a screen-space line-width
+  // adjustment. At grazing angles the projected grid compresses to a sliver
+  // while the pixel-sized arrowheads do not; fully cull those arrows to avoid
+  // a wall of overlapping tips along the cube edges.
+  function faceArrowOpacity(view) {
+    if (!Number.isFinite(view) || view <= 0.28) return 0;
+    const t = Math.min(1,(view-0.28)/0.38);
+    return t*t*(3-2*t);
+  }
+
   // Free rotation helpers. Angles are radians.
   // nearestAngle: the angle equivalent to `goal` (mod a full turn) that is closest to `now`,
   // so easing toward it never spins the long way round.
@@ -299,5 +309,5 @@
   // drag still follows the finger after the cube has been tipped over the top.
   function turnDirection(pitch) { return Math.cos(pitch) < 0 ? -1 : 1; }
 
-  return { nearestAngle, turnDirection, FACE_IDS, LEVEL_COUNT, MAX_HEARTS, pickProjectedArrow, buildArrowHead, arrowMetrics, sceneScale, getLevelConfig, generateLevel, isBlocked, getBlocker, getDirection, getEscapeShape, availableArrows, calculateLevelScore, getScoreAward };
+  return { nearestAngle, turnDirection, faceArrowOpacity, FACE_IDS, LEVEL_COUNT, MAX_HEARTS, pickProjectedArrow, buildArrowHead, arrowMetrics, sceneScale, getLevelConfig, generateLevel, isBlocked, getBlocker, getDirection, getEscapeShape, availableArrows, calculateLevelScore, getScoreAward };
 });

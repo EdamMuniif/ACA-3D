@@ -396,18 +396,22 @@
     // what is behind. They are not releasable; tapping one turns that face forward.
     for (const face of FACES) {
       const view=rotateVector(face.normal)[2];
-      if (view>.015) continue;
+      // Only retain extremely faint rear-face hints when fully back-facing.
+      // Near the silhouette these project into one messy line of oversized
+      // arrowheads, so never draw or pick rear arrows close to edge-on.
+      if (view>-.85) continue;
       const keep=selectedPoints.length;
-      context.save();context.globalAlpha=.17;
+      context.save();context.globalAlpha=.045;
       for (const arrow of level.arrows) if (arrow.face===face.id && !arrow.removed) drawArrow(arrow,face,time);
       context.restore();
       ghostPoints.push(...selectedPoints.splice(keep));
     }
     for (const face of faceNormals()) {
+      // Always render the cube's face and grid, even when its arrows are culled.
       drawFace(face);
-      // Arrows on a face seen edge-on fade out instead of smearing into a sliver.
-      const k=Math.max(0,Math.min(1,(face.view-.015)/.5));
-      context.save();context.globalAlpha=.05+.95*k*k*(3-2*k);
+      const opacity=Core.faceArrowOpacity(face.view);
+      if (opacity<=0) continue;
+      context.save();context.globalAlpha *= opacity;
       for (const arrow of level.arrows) if (arrow.face===face.id) drawArrow(arrow,face,time);
       context.restore();
     }
@@ -549,7 +553,7 @@
     if (modalOpen || !level) return;
     const options=Core.availableArrows(level);
     if (!options.length) return;
-    const visibles=faceNormals().map(f=>f.id);
+    const visibles=faceNormals().filter(f=>Core.faceArrowOpacity(f.view)>.2).map(f=>f.id);
     let picked=options.find(a=>visibles.includes(a.face));
     if (!picked) {
       // Align the nearest face with the camera, so the hint is actually visible.
