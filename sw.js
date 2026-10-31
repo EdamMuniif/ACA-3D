@@ -1,5 +1,5 @@
 /* ACA-3D keeps offline play without serving stale game logic. */
-const VERSION = 'arrow-cube-away-cache-v10';
+const VERSION = 'arrow-cube-away-cache-v11';
 const ASSETS = [
   './', './index.html', './styles.css?v=10', './core.js?v=10',
   './game.js?v=10', './icon.svg', './manifest.webmanifest'
