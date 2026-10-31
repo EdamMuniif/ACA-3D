@@ -564,7 +564,7 @@ button:focus-visible,canvas:focus-visible,.name-entry input:focus-visible { outl
   body.playing .sidebar,body.playing .page-footer{display:none}
   body.playing .game-hud{flex-direction:row;align-items:center;justify-content:space-between;gap:8px;padding:2px 4px 6px}
   body.playing .level-row{display:flex;align-items:baseline;gap:8px}
-  body.playing .level-row h1{font-size:26px;line-height:1}
+  body.playing .level-row h1,body.playing #levelTitle{font-size:26px;line-height:1}
   body.playing .hud-right{display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;gap:10px}
   body.playing .hearts{font-size:20px;gap:1px}
   body.playing .arrow-counter{font-size:13px;padding:4px 8px}
@@ -573,6 +573,12 @@ button:focus-visible,canvas:focus-visible,.name-entry input:focus-visible { outl
   body.playing .game-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding-top:6px}
   body.playing .game-actions .game-button{min-height:48px;font-size:12px;padding:0 4px}
   body.playing .game-actions .button-icon{margin-right:2px}
+}
+@media(max-width:360px){
+  body.playing .hud-right{gap:6px}
+  body.playing .hearts{font-size:17px}
+  body.playing .level-row h1,body.playing #levelTitle{font-size:24px}
+  body.playing .arrow-counter{padding:4px 6px}
 }
 
 /* ── Home: profile and rules fold into buttons ── */

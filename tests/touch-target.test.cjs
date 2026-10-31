@@ -198,6 +198,34 @@ test('renderer keeps face geometry but culls edge-on arrows and rear-edge ghosts
     'hints should route to a face with actually visible arrows');
 });
 
+test('the scene shrinks just enough to keep the rotated cube on screen (diagonal top view)',()=>{
+  const rot=(p,yaw,pitch)=>{const c=Math.cos(yaw),s=Math.sin(yaw),cx=Math.cos(pitch),sx=Math.sin(pitch);
+    const x=p[0]*c+p[2]*s,z=-p[0]*s+p[2]*c;return [x,p[1]*cx-z*sx,p[1]*sx+z*cx];};
+  const width=362,height=648,base=Core.sceneScale(width,height);
+  let shrunk=false;
+  for(let yaw=0;yaw<6.3;yaw+=.1)for(let pitch=-1.6;pitch<=1.6;pitch+=.1){
+    let ex=0,ey=0;
+    for(const a of [-1,1])for(const b of [-1,1])for(const d of [-1,1]){
+      const [x,y,z]=rot([a,b,d],yaw,pitch),k=5.6/(5.6-z);ex=Math.max(ex,Math.abs(x)*k);ey=Math.max(ey,Math.abs(y)*k);
+    }
+    const scale=Core.fitSceneScale(base,width,height,ex,ey);
+    assert.ok(scale<=base+1e-9);
+    if(scale<base)shrunk=true;
+    assert.ok(ex*scale<=width/2+1e-6,`yaw ${yaw.toFixed(1)} pitch ${pitch.toFixed(1)} clips horizontally`);
+    assert.ok(ey*scale<=height*.46+1e-6,`yaw ${yaw.toFixed(1)} pitch ${pitch.toFixed(1)} clips vertically`);
+  }
+  assert.ok(shrunk,'some views need the scene to shrink');
+  assert.equal(Core.fitSceneScale(100,300,500,0,0),100,'no extent leaves the base scale alone');
+});
+
+test('compact HUD title size beats the ID-based title rule and fit scaling is wired',()=>{
+  const css=fs.readFileSync(path.join(__dirname,'../styles.css'),'utf8');
+  const game=fs.readFileSync(path.join(__dirname,'../game.js'),'utf8');
+  assert.match(css,/body\.playing #levelTitle[^{]*\{font-size:26px/);
+  assert.match(game,/Core\.fitSceneScale\(baseScale/);
+  assert.match(game,/fitScene\(\);\s*\/\/ Repaint only when something visible changed/);
+});
+
 test('home screen folds player profile and how-it-works behind buttons',()=>{
   const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
   const game=fs.readFileSync(path.join(__dirname,'../game.js'),'utf8');
