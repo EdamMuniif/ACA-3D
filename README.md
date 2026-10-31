@@ -157,3 +157,7 @@ scoring and the game logic. Responsive visual testing on actual devices is recom
 - **Bold arrows:** Arrow-body stroke width scales with each level's grid spacing (approximately 4.5–12 canvas pixels) to keep dense puzzles readable.
 - **Touch:** Tap or click any part of a visible arrow line, bend, tail, or arrowhead. Touch picking considers the whole projected path and triangular tip, prefers the nearest stroke and the frontmost face when paths overlap, and tolerates slight finger drift without treating it as a rotation.
 - **Preserved rules:** A move is only legal if the arrowhead's exit route is unblocked. Points still depend on remaining hearts, now up to five. Existing player progress remains untouched.
+
+## V10 — visible triangular arrowheads
+
+A regression in V9 made the winding arrow shafts thick without increasing their head sizes. V10 corrects that drawing mismatch: each arrow has a clearly distinguishable, filled, screen-space triangular head, sized relative to the stroke. The round-capped shaft ends at the triangle base so it cannot cover the point. Head geometry stays legible as the cube rotates; arrow lines, tails, head triangles, and bend segments remain touch targets. There are no changes to the puzzle collision rules, five-heart gameplay, saved scores, player names, or level progression. Regression tests cover multiple arrow directions, head geometry and touch detection.

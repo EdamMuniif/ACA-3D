@@ -285,8 +285,6 @@
     const {direction,head:headPos} = shape;
     const head=(x,y)=>project(pointOnFace(face,x,y,1.024));
     const tip=head(headPos.x,headPos.y);
-    const wing1=head(headPos.x-direction.x*.46-direction.y*.27,headPos.y-direction.y*.46+direction.x*.27);
-    const wing2=head(headPos.x-direction.x*.46+direction.y*.27,headPos.y-direction.y*.46-direction.x*.27);
     const isHint = arrow.id===hintedId && time<hintExpiry && !arrow.removed;
     const isHover=arrow.id===hoveredId && !arrow.removed;
     const isBad=(arrow.badUntil||0)>time;
@@ -295,24 +293,38 @@
     // slightly in tightly packed high-density levels to preserve separation.
     const cellPitch=sceneScale*2/level.size;
     const width=Math.max(4.5,Math.min(12,cellPitch*.46));
+    const behind=head(headPos.x-direction.x*.65,headPos.y-direction.y*.65);
+    const arrowHead=Core.buildArrowHead(tip,behind,width);
+    if(!arrowHead) return;
+    const {wing1,wing2,shaftEnd}=arrowHead;
+    // Stop the thick round-capped body at the wide triangular base;
+    // otherwise its rounded end masks the pointed head.
+    const shaftPoints=points.slice();
+    shaftPoints[shaftPoints.length-1]=shaftEnd;
     context.save();
     // Keep the full arrow visible until the tail has crossed the cube edge.
     context.globalAlpha = motion ? Math.min(1,(1-fraction)/.07) : 1;
     if (isHint || isHover || isBad) {
-      drawSegment(points,isBad?'#ffd0d8':isHint?'#6df1e8':'#87d9fb',width+9,isHint?.70:.60);
+      drawSegment(shaftPoints,isBad?'#ffd0d8':isHint?'#6df1e8':'#87d9fb',width+9,isHint?.70:.60);
     }
-    drawSegment(points,color,width);
+    drawSegment(shaftPoints,color,width);
     if (motion) {
       // Glowing blue wake, matching the reference recording's release feedback.
       // Draw over only the leading section so the trailing body stays legible.
-      const leading = points.slice(Math.max(0,points.length-3));
+      const leading = shaftPoints.slice(Math.max(0,shaftPoints.length-3));
       context.save();
       context.shadowColor='#3baafa'; context.shadowBlur=14;
       drawSegment(leading,'#56bdff',width+3,.58);
       context.restore();
     }
-    context.beginPath(); context.moveTo(tip.x,tip.y);context.lineTo(wing1.x,wing1.y);context.lineTo(wing2.x,wing2.y);context.closePath();
-    context.fillStyle=color; context.fill();
+    // Paint the prominent filled head last, above any shaft/glow.
+    context.beginPath();
+    context.moveTo(tip.x,tip.y);
+    context.lineTo(wing1.x,wing1.y);
+    context.lineTo(wing2.x,wing2.y);
+    context.closePath();
+    context.fillStyle=color;
+    context.fill();
     if (isHint) {
       context.beginPath();context.arc(tip.x,tip.y,12+2*Math.sin(time*.008),0,TAU);
       context.strokeStyle='rgba(5,164,159,.53)';context.lineWidth=2;context.stroke();

@@ -7,7 +7,7 @@ const code = fs.readFileSync(path.join(__dirname, '../sw.js'), 'utf8');
 
 function makeWorker(offline=false) {
   const handlers = {}, saved = new Map();
-  const request = {url:'https://example.test/ACA-3D/game.js?v=9',method:'GET',mode:'same-origin'};
+  const request = {url:'https://example.test/ACA-3D/game.js?v=10',method:'GET',mode:'same-origin'};
   const response = body => ({ok:true,body,clone(){return response(body)}});
   const cache = {
     async put(req,r){saved.set(req.url,r)},
@@ -43,6 +43,6 @@ test('offline requests retain last known-good JavaScript',async()=>{
 });
 test('HTML uses cache-busted script and stylesheet assets',()=>{
   const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
-  for(const url of ['./core.js?v=9','./game.js?v=9','./styles.css?v=9'])assert.ok(html.includes(url));
+  for(const url of ['./core.js?v=10','./game.js?v=10','./styles.css?v=10'])assert.ok(html.includes(url));
   assert.ok(html.includes("updateViaCache:'none'"));
 });
