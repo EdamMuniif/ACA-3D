@@ -469,7 +469,7 @@ button:focus-visible,canvas:focus-visible,.name-entry input:focus-visible { outl
 .level-hub-tile.completed::after,.level-tile.completed:not(.current)::after { content:''; position:absolute; right:9px; top:9px; width:7px; height:7px; border-radius:50%; background:var(--verdigris); }
 .level-hub-tile.completed .tile-caption { color:var(--verdigris); }
 .level-hub-tile.locked,.level-tile.locked { background:transparent; opacity:.5; }
-.level-hub-tile:not(:disabled):hover,.level-tile:not(:disabled):hover { border-color:var(--ink); background:var(--card); }
+.level-hub-tile:not(:disabled):not(.current):hover,.level-tile:not(:disabled):not(.current):hover { border-color:var(--ink); background:var(--card); }
 
 /* play screen */
 .eyebrow,.card-eyebrow { color:var(--ink-3); letter-spacing:.2em; }
