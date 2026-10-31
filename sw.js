@@ -1,8 +1,8 @@
 /* ACA-3D keeps offline play without serving stale game logic. */
-const VERSION = 'arrow-cube-away-cache-v19';
+const VERSION = 'arrow-cube-away-cache-v20';
 const ASSETS = [
-  './', './index.html', './styles.css?v=19', './core.js?v=19',
-  './game.js?v=19', './icon.svg', './manifest.webmanifest',
+  './', './index.html', './styles.css?v=20', './core.js?v=20',
+  './game.js?v=20', './icon.svg', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png',
   './fonts/InstrumentSans-Regular.woff2', './fonts/InstrumentSans-Bold.woff2',
   './fonts/InstrumentSerif-Regular.woff2', './fonts/InstrumentSerif-Italic.woff2'

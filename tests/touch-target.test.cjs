@@ -81,14 +81,51 @@ test('arrowhead geometry scales from narrow to bold bodies, with safe invalid in
   assert.equal(Core.buildArrowHead({x:10,y:10},{x:10,y:10},12),null);
   assert.equal(Core.buildArrowHead({x:NaN,y:0},{x:1,y:0},12),null);
 });
-test('renderer draws shaft to triangle base rather than covering tip with a round cap',()=>{
+test('renderer paints thick 2D ink polygons on a 3D cube face',()=>{
   const game=fs.readFileSync(path.join(__dirname,'../game.js'),'utf8');
-  assert.match(game,/Core\.buildArrowHead\(tip,behind,width\)/);
-  assert.match(game,/shaftPoints\[shaftPoints\.length-1\]=shaftEnd/);
-  assert.match(game,/drawSegment\(shaftPoints,color,width\)/);
-  assert.match(game,/context\.lineTo\(wing1\.x,wing1\.y\)/);
-  assert.match(game,/context\.lineTo\(wing2\.x,wing2\.y\)/);
-  assert.match(game,/selectedPoints\.push\(\{arrow,points,depth:.*tip,wing1,wing2,width\}\)/);
+  assert.match(game,/Core\.buildFlatArrowGeometry\(shape\.points,shape\.direction,\.23\)/);
+  assert.match(game,/function fillFacePolygon\(face,vertices\)/);
+  assert.match(game,/pointOnFace\(face,vertices\[i\]\.x,vertices\[i\]\.y,1\.023\)/);
+  assert.match(game,/for\(const quad of geometry\.quads\)fillFacePolygon\(face,quad\)/);
+  assert.match(game,/for\(const disk of geometry\.discs\)fillFacePolygon\(face,disk\)/);
+  assert.match(game,/fillFacePolygon\(face,geometry\.head\)/);
+  assert.match(game,/Core\.pickProjectedArrow\(x,y,selectedPoints/);
+  assert.match(game,/arrow,face:face\.id,points,depth:rotateVector\(face\.normal\)\[2\]/);
+});
+
+test('flat arrow body is thick and confined to the face plane, with a pointed 2D head',()=>{
+  const points=[{x:.5,y:.5},{x:1.5,y:.5},{x:1.5,y:1.5},{x:1.5,y:1.89}];
+  const geo=Core.buildFlatArrowGeometry(points,{x:0,y:1},.23);
+  assert.ok(geo);
+  assert.ok(geo.quads.length>=2,'winding arrow forms ribbon polygons');
+  assert.equal(geo.bodyWidth,.23);
+  assert.equal(geo.headWidth,.5);
+  assert.equal(geo.head.length,3);
+  assert.ok(Math.abs(geo.head[0].y-1.89)<1e-9,'tip stays at the real head');
+  assert.equal(geo.discs.length,points.length,'rounded joints and tail are face polygons');
+  for(const shape of [...geo.quads,...geo.discs,geo.head])
+    for(const pt of shape){
+      assert.ok(Number.isFinite(pt.x)&&Number.isFinite(pt.y),'finite face coordinates');
+      assert.ok(!('z' in pt),'no extrusion / billboard geometry');
+    }
+  const normal=geo.quads[0];
+  const width=Math.hypot(normal[0].x-normal[3].x,normal[0].y-normal[3].y);
+  assert.ok(Math.abs(width-.23)<1e-9,'shaft has requested thick grid-space width');
+  assert.ok(geo.headWidth<1,'arrowhead fits inside adjacent arrow lanes');
+  assert.equal(Core.buildFlatArrowGeometry([{x:0,y:0}],{x:1,y:0}),null);
+  assert.equal(Core.buildFlatArrowGeometry(points,{x:0,y:0}),null);
+  assert.equal(Core.buildFlatArrowGeometry([{x:NaN,y:0},{x:1,y:1}],{x:1,y:0}),null);
+});
+
+test('full-body touch selection continues to hit bends and the flat head',()=>{
+  const points=[{x:10,y:10},{x:40,y:10},{x:40,y:40},{x:40,y:40.39}];
+  const geo=Core.buildFlatArrowGeometry(points,{x:0,y:1},.23);
+  const arrow={id:'flat',face:'front',removed:false};
+  const item={arrow,face:'front',points,depth:1,width:10,tip:geo.head[0],
+    wing1:geo.head[1],wing2:geo.head[2]};
+  for(const p of [{x:10,y:10},{x:25,y:10},{x:40,y:10},{x:40,y:22},{x:40,y:40.3}])
+    assert.equal(Core.pickProjectedArrow(p.x,p.y,[item],8),arrow);
+  assert.equal(Core.pickProjectedArrow(80,80,[item],8),null);
 });
 
 test('several arrows may escape at once and a repeat tap on a blocked arrow is free',()=>{
