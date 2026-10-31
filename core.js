@@ -8,6 +8,7 @@
 
   const FACE_IDS = ['front', 'right', 'top', 'left', 'back', 'bottom'];
   const LEVEL_COUNT = 15;
+  const MAX_HEARTS = 5;
 
   function randomGenerator(seed) {
     let s = seed >>> 0;
@@ -198,7 +199,7 @@
   // over the player's previous best, preventing unlimited score farming.
   function calculateLevelScore({arrows,hearts,tier,hints}={}) {
     const count=Math.max(0,Math.floor(Number(arrows)||0));
-    const lives=Math.max(0,Math.min(3,Math.floor(Number(hearts)||0)));
+    const lives=Math.max(0,Math.min(MAX_HEARTS,Math.floor(Number(hearts)||0)));
     const assists=Math.max(0,Math.floor(Number(hints)||0));
     const tierBonus=tier==='Hard'?150:tier==='Medium'?75:25;
     return Math.max(0,count*10 + lives*25 + tierBonus - assists*15);
@@ -209,9 +210,52 @@
     return {best:updated,awarded:updated-oldBest};
   }
 
+  // Screen-space selection: the entire visible polyline, including its
+  // arrowhead, is tappable. Pick the nearest stroke instead of requiring
+  // an exact tap on the tip; slight depth preference breaks visual ties.
+  function pointToSegmentDistance(x,y,a,b) {
+    const dx=b.x-a.x,dy=b.y-a.y;
+    const lenSq=dx*dx+dy*dy;
+    const t=lenSq>0?Math.max(0,Math.min(1,((x-a.x)*dx+(y-a.y)*dy)/lenSq)):0;
+    return Math.hypot(x-a.x-t*dx,y-a.y-t*dy);
+  }
+  function insideTriangle(x,y,a,b,c) {
+    const sign=(p,q)=>(x-q.x)*(p.y-q.y)-(p.x-q.x)*(y-q.y);
+    const u=sign(a,b),v=sign(b,c),w=sign(c,a);
+    return !(u<0||v<0||w<0) || !(u>0||v>0||w>0);
+  }
+  function pickProjectedArrow(x,y,items,touchPadding=7) {
+    if(!Number.isFinite(x)||!Number.isFinite(y))return null;
+    let best=null,bestScore=Infinity,bestDepth=-Infinity;
+    for(const item of items) {
+      if(!item.arrow || item.arrow.removed || !Array.isArray(item.points) || item.points.length<2)continue;
+      let distance=Infinity;
+      for(let i=1;i<item.points.length;i++) {
+        distance=Math.min(distance,pointToSegmentDistance(x,y,item.points[i-1],item.points[i]));
+      }
+      if(item.tip && item.wing1 && item.wing2) {
+        const [a,b,c]=[item.tip,item.wing1,item.wing2];
+        if(insideTriangle(x,y,a,b,c))distance=0;
+        else {
+          distance=Math.min(distance,pointToSegmentDistance(x,y,a,b),
+            pointToSegmentDistance(x,y,b,c),pointToSegmentDistance(x,y,c,a));
+        }
+      }
+      const radius=Math.max(7,(Number(item.width)||3)/2+Math.max(0,touchPadding));
+      if(distance>radius)continue;
+      const depth=Number(item.depth)||0;
+      // Distance controls selection. Prefer the frontmost face only on
+      // visually indistinguishable overlapping strokes.
+      if(distance<bestScore-0.5 || (Math.abs(distance-bestScore)<=0.5 && depth>bestDepth)) {
+        best=item.arrow;bestScore=distance;bestDepth=depth;
+      }
+    }
+    return best;
+  }
+
   function availableArrows(level) {
     return level.arrows.filter(a => !a.removed && !isBlocked(a, level.arrows, level.size));
   }
 
-  return { FACE_IDS, LEVEL_COUNT, getLevelConfig, generateLevel, isBlocked, getBlocker, getDirection, getEscapeShape, availableArrows, calculateLevelScore, getScoreAward };
+  return { FACE_IDS, LEVEL_COUNT, MAX_HEARTS, pickProjectedArrow, getLevelConfig, generateLevel, isBlocked, getBlocker, getDirection, getEscapeShape, availableArrows, calculateLevelScore, getScoreAward };
 });

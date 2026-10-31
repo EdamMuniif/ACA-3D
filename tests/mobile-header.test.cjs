@@ -23,5 +23,5 @@ test('Home, Levels, sound and settings retain their accessible controls',()=>{
   assert.ok(controlSection);
   const ids=[...controlSection[1].matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
   assert.deepEqual(ids,['homeNavBtn','levelsNavBtn','soundBtn','settingsBtn']);
-  assert.match(html,/href="\.\/styles\.css\?v=8"/);
+  assert.match(html,/href="\.\/styles\.css\?v=9"/);
 });

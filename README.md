@@ -8,7 +8,7 @@ A complete, original, mobile-friendly **3D arrow escape puzzle** built in plain 
 - **Tap** a visible arrow to release it head-first, with the tail following the bends of its path.
 - The arrow is **blocked** when another arrow occupies the straight outward exit ray beyond its arrowhead on the same face. The tail follows the arrow's existing path instead of sliding rigidly.
 - Clear free arrows first, then newly unblocked arrows. Clear all faces to finish.
-- A blocked tap removes one heart. You have three hearts per attempt. Hints are unlimited.
+- A blocked tap removes one heart. You have five hearts per attempt. Hints are unlimited.
 - Fifteen levels in three tiers: **Easy (1–5), Medium (6–10), Hard (11–15)**.
 - Optional colorful arrow mode, sound effects, auto-saved unlocked levels and current level, and offline support.
 
@@ -103,7 +103,7 @@ The app now has three mobile-friendly screens:
 
 1. **Home** — enter a local player name, see points and completed stages, start or continue.
 2. **Levels** — choose from 15 progressively harder stages. Locked levels cannot be opened.
-3. **Play** — rotate the 3D cube, tap arrows with unobstructed head exit rays, use hints, lose hearts for blocked moves, restart the current attempt, and advance on a win.
+3. **Play** — rotate the 3D cube, tap anywhere on an arrow body or arrowhead when its exit ray is clear, use hints, lose hearts for blocked moves, restart the current attempt, and advance on a win.
 
 **Scoring rules:** A level is scored only when all its arrows escape:
 
@@ -122,7 +122,7 @@ audio and color settings are saved in the browser's existing `localStorage` key.
 Older saves migrate automatically without discarding unlocked levels. The name is a
 local display name only; there is no online account or leaderboard.
 
-**Restart options:** Use *Restart* during play to start the current level with three hearts.
+**Restart options:** Use *Restart* during play to start the current level with five hearts.
 Use *Settings → Reset all progress and points* to begin from Level 1; this requires a
 confirmation and keeps the player's name and preferences. Reset is irreversible on that device.
 
@@ -150,3 +150,10 @@ and reducing the time between opening the page and starting the game** rather th
 
 Run `node --test tests/*.test.cjs` to check navigation, DOM references, cache versions,
 scoring and the game logic. Responsive visual testing on actual devices is recommended.
+
+## V9: Five hearts and full-body arrow selection
+
+- **Lives:** Each new or restarted level starts with five hearts. A blocked arrow still costs one heart. The game-over screen appears when all five are lost.
+- **Bold arrows:** Arrow-body stroke width scales with each level's grid spacing (approximately 4.5–12 canvas pixels) to keep dense puzzles readable.
+- **Touch:** Tap or click any part of a visible arrow line, bend, tail, or arrowhead. Touch picking considers the whole projected path and triangular tip, prefers the nearest stroke and the frontmost face when paths overlap, and tolerates slight finger drift without treating it as a rotation.
+- **Preserved rules:** A move is only legal if the arrowhead's exit route is unblocked. Points still depend on remaining hearts, now up to five. Existing player progress remains untouched.

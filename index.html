@@ -8,9 +8,9 @@
   <title>Arrow Cube Away — 3D Puzzle</title>
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="stylesheet" href="./styles.css?v=8">
-  <script defer src="./core.js?v=8"></script>
-  <script defer src="./game.js?v=8"></script>
+  <link rel="stylesheet" href="./styles.css?v=9">
+  <script defer src="./core.js?v=9"></script>
+  <script defer src="./game.js?v=9"></script>
 </head>
 <body>
   <div class="app-shell">
@@ -87,7 +87,7 @@
           <h2>Four quick rules</h2>
           <p><b>01</b> Rotate the cube to inspect all faces.</p>
           <p><b>02</b> Tap only an arrow with a clear exit.</p>
-          <p><b>03</b> Three hearts per attempt. Hints lower your score.</p>
+          <p><b>03</b> Five hearts per attempt. Tap anywhere on an arrow; hints lower your score.</p>
           <p><b>04</b> Clear the cube to earn points and unlock the next level.</p>
         </div>
       </section>
@@ -114,7 +114,7 @@
           </div>
           <div class="hud-right">
             <span class="player-score-line"><span id="hudPlayerName">Player</span> · <strong id="hudPoints">0</strong> pts</span>
-            <div class="hearts" id="hearts" aria-label="3 hearts remaining"><span>♥</span><span>♥</span><span>♥</span></div>
+            <div class="hearts" id="hearts" aria-label="5 hearts remaining"><span>♥</span><span>♥</span><span>♥</span><span>♥</span><span>♥</span></div>
             <div class="arrow-counter"><span class="arrow-counter-icon">↗</span> <strong id="remainingCount">0</strong><span class="counter-label"> LEFT</span></div>
           </div>
         </div>
