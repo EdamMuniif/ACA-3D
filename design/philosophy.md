@@ -1,0 +1,13 @@
+# Orthographic Quiet
+
+*A visual philosophy for work that thinks in lines.*
+
+Orthographic Quiet begins from the draughtsman's conviction that a drawing is an argument made with the fewest possible marks. The world is reduced to edge, axis and measure; surface is carried by a single warm ground, the tone of aged vellum, and by nothing else. Every mark that survives is one that could be defended. The result must look as though it was drawn at a slanted table over many long evenings by someone who had done this ten thousand times: patient, exact, unhurried, the product of deep expertise rather than of effect.
+
+Space is treated as an instrument, not a void. Margins are generous and measured to a strict module; the subject sits slightly off the centre of gravity so the page keeps a quiet tension. Form is rendered in true isometric projection, thirty degrees to the horizontal, so that depth is shown without perspective's drama. Where a solid is drawn, it is drawn as glass: its hidden edges remain faintly legible, because honesty about structure is the whole aesthetic. Each alignment is the work of countless refinements, and nothing is ever placed by approximation.
+
+Colour is rationed with discipline. A near-black ink carries structure. Graphite and sand-coloured rules carry everything secondary, in many deliberate steps of weight. One saturated vermilion exists on the sheet, and it is spent once, on the single thing the eye must follow. Because it is rationed, it commands the page without raising its voice. Any second accent would be a confession of doubt; the palette stays small so that every hue can be exact.
+
+Rhythm comes from accumulation. A lattice of tiny marks, repeated with obsessive regularity, builds a field that rewards sustained looking; hairline ticks, dimension lines and registration crosses build the sense of a document from an imaginary discipline, studied with scientific reverence. The density is patient rather than loud. Meticulous craftsmanship shows in the consistency of the repeated element: the thousandth tick is as true as the first.
+
+Typography is a whisper, never a headline. Small tracked capitals set the plate number and the legend; a single line of italic serif may speak once, quietly, like a margin note in a master's hand. Text is an instrument of the drawing, aligned to its measure, contained well inside the margins, never competing with the line work. The final piece should feel as though it took countless hours, were checked by a perfectionist at the top of the field, and could hang, unframed and unexplained, in a museum of working drawings.

@@ -8,14 +8,16 @@
   const context = canvas.getContext('2d', { alpha: true });
   const TAU = Math.PI * 2;
   const FACES = [
-    { id:'front',  normal:[0,0,1],  u:[1,0,0],  v:[0,-1,0], tint:'#ffffff' },
-    { id:'right',  normal:[1,0,0],  u:[0,0,-1], v:[0,-1,0], tint:'#f5faff' },
-    { id:'top',    normal:[0,1,0],  u:[1,0,0],  v:[0,0,1],  tint:'#ffffff' },
-    { id:'left',   normal:[-1,0,0], u:[0,0,1],  v:[0,-1,0], tint:'#f4f9ff' },
-    { id:'back',   normal:[0,0,-1], u:[-1,0,0], v:[0,-1,0], tint:'#ffffff' },
-    { id:'bottom', normal:[0,-1,0], u:[1,0,0],  v:[0,0,-1], tint:'#f5faff' }
+    { id:'front',  normal:[0,0,1],  u:[1,0,0],  v:[0,-1,0], tint:'#FBF8F1' },
+    { id:'right',  normal:[1,0,0],  u:[0,0,-1], v:[0,-1,0], tint:'#F6F1E6' },
+    { id:'top',    normal:[0,1,0],  u:[1,0,0],  v:[0,0,1],  tint:'#FDFBF6' },
+    { id:'left',   normal:[-1,0,0], u:[0,0,1],  v:[0,-1,0], tint:'#F4EEE2' },
+    { id:'back',   normal:[0,0,-1], u:[-1,0,0], v:[0,-1,0], tint:'#FBF8F1' },
+    { id:'bottom', normal:[0,-1,0], u:[1,0,0],  v:[0,0,-1], tint:'#F4EEE2' }
   ];
-  const COLORS = ['#0d658c','#6d54d8','#008f88','#d5842b','#a14f9e','#2076cb'];
+  const COLORS = ['#C8452C','#2F6F9F','#1F7A6D','#B8861B','#7B4B94','#3F5E3A'];
+  const INK = '#1B1D22', VERMILION = '#E5482D', AMBER = '#E0A030', VERDIGRIS = '#1F7A6D';
+  let blockFeedback = null; // { arrowId, blockerId, cell, until } after a blocked tap
   const PERSIST_KEY = 'arrow-cube-away-v1';
   const base = { unlocked:1, lastLevel:1, completed:[], sound:true, colorful:false, playerName:'Player', bestScores:{}, points:0 };
   function loadSave() {
@@ -142,7 +144,7 @@
   }
 
   function updateHUD() {
-    $('levelTitle').textContent = `Level ${String(currentLevel).padStart(2,'0')}`;
+    $('levelTitle').innerHTML = `<em>Level</em> <span class="num">${String(currentLevel).padStart(2,'0')}</span>`;
     $('levelFraction').textContent = `${String(currentLevel).padStart(2,'0')} / 15`;
     $('difficultyTag').textContent = level.tier.toUpperCase();
     $('difficultyTag').className = 'difficulty-tag ' + level.tier.toLowerCase();
@@ -204,7 +206,7 @@
     persist();
     level = Core.generateLevel(currentLevel);
     hearts = Core.MAX_HEARTS; hintsUsed = 0; lastScoreAward = 0; lastLevelScore = 0;
-    hoveredId = null; hintedId = null;
+    hoveredId = null; hintedId = null; blockFeedback = null;
     yaw = -.66; pitch = .43; desiredYaw = yaw;
     $('toast').classList.remove('visible');
     hideModal();
@@ -236,7 +238,19 @@
     if (points.length < 2) return;
     context.save();context.globalAlpha *= alpha;
     context.beginPath();context.moveTo(points[0].x,points[0].y);
-    for (let i=1;i<points.length;i++) context.lineTo(points[i].x,points[i].y);
+    // Round every bend so the body flows around corners instead of snapping.
+    for (let i=1;i<points.length-1;i++) {
+      const a=points[i-1],b=points[i],c=points[i+1];
+      const l1=Math.hypot(a.x-b.x,a.y-b.y),l2=Math.hypot(c.x-b.x,c.y-b.y);
+      if (l1<.01||l2<.01) { context.lineTo(b.x,b.y); continue; }
+      // The arc touches each segment at r/tan(angle/2) from the corner. On faces seen
+      // at a grazing angle a 90deg bend projects to a sharp angle, so cap r by that reach.
+      const cos=((a.x-b.x)*(c.x-b.x)+(a.y-b.y)*(c.y-b.y))/(l1*l2);
+      const tanHalf=Math.sqrt(Math.max(0,(1-cos)/(1+cos+1e-9)));
+      const r=Math.min(11,Math.min(l1,l2)/2*tanHalf);
+      if (r<.5) context.lineTo(b.x,b.y); else context.arcTo(b.x,b.y,c.x,c.y,r);
+    }
+    context.lineTo(points[points.length-1].x,points[points.length-1].y);
     context.lineCap = 'round'; context.lineJoin = 'round';
     context.strokeStyle=style;context.lineWidth=width;context.stroke();
     context.restore();
@@ -247,28 +261,28 @@
     context.beginPath();context.moveTo(corners[0].x,corners[0].y);
     corners.slice(1).forEach(p => context.lineTo(p.x,p.y));context.closePath();
     context.save();
-    context.shadowColor='rgba(25,101,150,.16)';context.shadowBlur=12;
-    context.globalAlpha=.33;context.fillStyle=face.tint;context.fill();context.restore();
+    context.shadowColor='rgba(27,29,34,.10)';context.shadowBlur=12;
+    context.globalAlpha=.62;context.fillStyle=face.tint;context.fill();context.restore();
     context.lineWidth=1.6;
-    context.strokeStyle='rgba(109,155,187,.65)';context.stroke();
+    context.strokeStyle='rgba(27,29,34,.78)';context.stroke();
     // Faint construction grid: helpful for understanding exact arrow clearance.
     for (let i=1;i<N;i++) {
       const off=.003;
-      drawSegment([project(pointOnFace(face,i,0,1+off)),project(pointOnFace(face,i,N,1+off))],'#b0d2e5',.65,.22);
-      drawSegment([project(pointOnFace(face,0,i,1+off)),project(pointOnFace(face,N,i,1+off))],'#b0d2e5',.65,.22);
+      drawSegment([project(pointOnFace(face,i,0,1+off)),project(pointOnFace(face,i,N,1+off))],'#D8CFBB',.65,.55);
+      drawSegment([project(pointOnFace(face,0,i,1+off)),project(pointOnFace(face,N,i,1+off))],'#D8CFBB',.65,.55);
     }
     // Subtle inset edge brings out the transparent-cube aesthetic.
     const inset=.06*N;
     const insetPoints=[[inset,inset],[N-inset,inset],[N-inset,N-inset],[inset,N-inset]].map(([x,y]) => project(pointOnFace(face,x,y,1.006)));
     context.beginPath();context.moveTo(insetPoints[0].x,insetPoints[0].y);
     insetPoints.slice(1).forEach(p=>context.lineTo(p.x,p.y));context.closePath();
-    context.strokeStyle='rgba(204,227,244,.55)'; context.lineWidth=.9;context.stroke();
+    context.strokeStyle='rgba(216,207,187,.7)'; context.lineWidth=.9;context.stroke();
   }
   function drawCubeShadow() {
     const width = sceneScale*1.65;
     const centerY=sceneHeight*.516 + sceneScale*1.39;
     const gradient=context.createRadialGradient(sceneWidth*.5,centerY,8,sceneWidth*.5,centerY,width);
-    gradient.addColorStop(0,'rgba(27,116,176,.16)');gradient.addColorStop(1,'rgba(27,116,176,0)');
+    gradient.addColorStop(0,'rgba(27,29,34,.14)');gradient.addColorStop(1,'rgba(27,29,34,0)');
     context.save();context.translate(sceneWidth*.5,centerY);context.scale(1,.24);context.translate(-sceneWidth*.5,-centerY);
     context.beginPath();context.arc(sceneWidth*.5,centerY,width,0,TAU);context.fillStyle=gradient;context.fill();context.restore();
   }
@@ -277,9 +291,10 @@
     const motion = arrow.escape;
     const fraction = motion ? Math.max(0,Math.min(1,(time-motion.startedAt)/motion.duration)) : 0;
     if (motion && fraction>=1) return;
-    // Ease in/out without teleporting or cutting off the arrow's trailing end.
-    const eased = fraction < .5 ? 4*fraction*fraction*fraction :
-      1-Math.pow(-2*fraction+2,3)/2;
+    // Start from rest, then glide at one steady speed: the head leads and the tail
+    // follows the same line, with no slow-down while the arrow is still on the cube.
+    const ramp = .2, cruise = 1/(1-ramp/2);
+    const eased = fraction < ramp ? cruise*fraction*fraction/(2*ramp) : cruise*(fraction-ramp/2);
     const shape = Core.getEscapeShape(arrow,level.size,motion ? motion.distance*eased : 0);
     const points = shape.points.map(p=>project(pointOnFace(face,p.x,p.y,1.019)));
     const {direction,head:headPos} = shape;
@@ -288,7 +303,9 @@
     const isHint = arrow.id===hintedId && time<hintExpiry && !arrow.removed;
     const isHover=arrow.id===hoveredId && !arrow.removed;
     const isBad=(arrow.badUntil||0)>time;
-    const color = isBad?'#e9506b':isHint?'#079da2':progress.colorful?COLORS[FACES.indexOf(FACES.find(f=>f.id===face.id))]:'#101419';
+    const fb = blockFeedback && time<blockFeedback.until ? blockFeedback : null;
+    // The arrow that is leaving is the one vermilion mark on the board.
+    const color = motion?VERMILION:isBad?VERMILION:isHint?VERDIGRIS:progress.colorful?COLORS[FACES.indexOf(FACES.find(f=>f.id===face.id))]:INK;
     // Keep black winding lines bold like the reference, while scaling down
     // slightly in tightly packed high-density levels to preserve separation.
     const cellPitch=sceneScale*2/level.size;
@@ -305,18 +322,17 @@
     // Keep the full arrow visible until the tail has crossed the cube edge.
     context.globalAlpha = motion ? Math.min(1,(1-fraction)/.07) : 1;
     if (isHint || isHover || isBad) {
-      drawSegment(shaftPoints,isBad?'#ffd0d8':isHint?'#6df1e8':'#87d9fb',width+9,isHint?.70:.60);
+      drawSegment(shaftPoints,isBad?'#F6C6BA':isHint?'#9CD3C6':'#EBD9A6',width+9,isHint?.75:.7);
     }
-    drawSegment(shaftPoints,color,width);
-    if (motion) {
-      // Glowing blue wake, matching the reference recording's release feedback.
-      // Draw over only the leading section so the trailing body stays legible.
-      const leading = shaftPoints.slice(Math.max(0,shaftPoints.length-3));
-      context.save();
-      context.shadowColor='#3baafa'; context.shadowBlur=14;
-      drawSegment(leading,'#56bdff',width+3,.58);
+    if (fb && arrow.id===fb.blockerId) drawSegment(shaftPoints,AMBER,width+9,.5+.25*Math.sin(time*.016));
+    if (fb && arrow.id===fb.arrowId) {
+      // Show exactly why: the straight run ahead of the head, ending on the arrow in the way.
+      const stop=head(fb.cell.x+.5,fb.cell.y+.5);
+      context.save();context.setLineDash([7,6]);
+      drawSegment([tip,stop],VERMILION,Math.max(2.4,width*.45),.75+.25*Math.sin(time*.016));
       context.restore();
     }
+    drawSegment(shaftPoints,color,width);
     // Paint the prominent filled head last, above any shaft/glow.
     context.beginPath();
     context.moveTo(tip.x,tip.y);
@@ -327,7 +343,7 @@
     context.fill();
     if (isHint) {
       context.beginPath();context.arc(tip.x,tip.y,12+2*Math.sin(time*.008),0,TAU);
-      context.strokeStyle='rgba(5,164,159,.53)';context.lineWidth=2;context.stroke();
+      context.strokeStyle='rgba(31,122,109,.6)';context.lineWidth=2;context.stroke();
     }
     context.restore();
     if (!arrow.removed) selectedPoints.push({arrow,points,depth:rotateVector(face.normal)[2],tip,wing1,wing2,width});
@@ -436,24 +452,23 @@
     if (blocker) {
       hearts--;
       arrow.badUntil=stamp+680;
-      hintedId=blocker.id;
-      hintExpiry=stamp+1700;
+      blockFeedback={arrowId:arrow.id,blockerId:blocker.id,cell:blocker.cell,until:stamp+1700};
       playSound('bad');
       updateHUD();
       if (hearts===0) {
         setToast('No hearts left. Try again.','warning');
         const generation=activeGeneration;
         setTimeout(()=>{if(generation===activeGeneration && screenMode==='play') showLossModal();},550);
-      } else setToast('Blocked exit — highlighted arrow is in the way.','warning');
+      } else setToast('Blocked — the amber arrow is in the way.','warning');
       return;
     }
     const shape=Core.getEscapeShape(arrow,level.size);
     arrow.removed=true;
     const reducedMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     arrow.escape={startedAt:stamp,distance:shape.totalTravel,
-      duration:reducedMotion ? 200 : Math.min(1200,Math.max(680,440+shape.totalTravel*85))};
+      duration:reducedMotion ? 200 : Math.min(950,Math.max(560,360+shape.totalTravel*55))};
     activeEscape=arrow;
-    hintedId=null;hoveredId=null;
+    hintedId=null;hoveredId=null;blockFeedback=null;
     playSound('good');
     updateHUD();
   }

@@ -41,6 +41,9 @@ function bootGame(save=null){
         toggle:(k,on)=>{if(on===undefined)on=!state.has(k);on?state.add(k):state.delete(k);return on},
         contains:k=>state.has(k)};
     }
+    // Mirror the browser: setting markup also sets the text a screen reader or user sees.
+    set innerHTML(html){this._html=html;this.textContent=String(html).replace(/<[^>]*>/g,'')}
+    get innerHTML(){return this._html??''}
     addEventListener(type,fn){(this.handlers[type]??=[]).push(fn)}
     appendChild(x){this.children.push(x);return x}
     append(...xs){this.children.push(...xs)}
