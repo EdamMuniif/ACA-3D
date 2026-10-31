@@ -450,10 +450,11 @@
     // glide out together without affecting what blocks what.
     if (arrow.removed || hearts<=0) return;
     const stamp=performance.now();
-    // A second tap on an arrow that is still flashing red is the same mistake, not a new one.
-    if ((arrow.badUntil||0)>stamp) return;
     const blocker=Core.getBlocker(arrow,level.arrows,level.size);
     if (blocker) {
+      // A second tap on an arrow that is still flashing red and still blocked is the
+      // same mistake, not a new one. Once the blocker is gone the tap is a real release.
+      if ((arrow.badUntil||0)>stamp) return;
       hearts--;
       arrow.badUntil=stamp+680;
       blockFeedback={arrowId:arrow.id,blockerId:blocker.id,cell:blocker.cell,until:stamp+1700};

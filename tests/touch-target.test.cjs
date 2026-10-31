@@ -99,5 +99,5 @@ test('several arrows may escape at once and a repeat tap on a blocked arrow is f
   // The win modal waits until the last escaping arrow has left the cube.
   assert.match(js,/!escaping\.size && level\.arrows\.every\(a=>a\.removed\)\) finishLevel\(\)/);
   // A second tap while the arrow is still flashing red must not cost another heart.
-  assert.match(js,/if \(\(arrow\.badUntil\|\|0\)>stamp\) return;/);
+  assert.match(js,/if \(blocker\) \{[^}]*?if \(\(arrow\.badUntil\|\|0\)>stamp\) return;\s*hearts--;/s);
 });
