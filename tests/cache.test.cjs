@@ -43,6 +43,6 @@ test('offline requests retain last known-good JavaScript',async()=>{
 });
 test('HTML uses cache-busted script and stylesheet assets',()=>{
   const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
-  for(const url of ['./core.js?v=10','./game.js?v=10','./styles.css?v=10'])assert.ok(html.includes(url));
+  for(const url of ['./core.js','./game.js','./styles.css'])assert.match(html,new RegExp(url.replace('.','\\.')+'\\?v=\\d+'));
   assert.ok(html.includes("updateViaCache:'none'"));
 });

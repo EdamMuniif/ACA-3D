@@ -3,23 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0c2343">
+  <meta name="theme-color" content="#F3EEE3">
   <meta name="description" content="Arrow Cube Away — rotate a 3D cube, find free arrows, and solve 15 logic puzzles from easy to hard. Play offline.">
   <title>Arrow Cube Away — 3D Puzzle</title>
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="stylesheet" href="./styles.css?v=10">
-  <script defer src="./core.js?v=10"></script>
-  <script defer src="./game.js?v=10"></script>
+  <link rel="preload" href="./fonts/InstrumentSans-Regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="./fonts/InstrumentSerif-Regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="./styles.css?v=12">
+  <script defer src="./core.js?v=12"></script>
+  <script defer src="./game.js?v=12"></script>
 </head>
 <body>
   <div class="app-shell">
     <header class="topbar">
       <div class="brand" aria-label="Arrow Cube Away 3D Puzzle">
-        <div class="brand-icon" aria-hidden="true">
-          <svg viewBox="0 0 42 42" fill="none"><path d="M21 3 37 12v18l-16 9L5 30V12L21 3Z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><path d="m5 12 16 10 16-10M21 22v17" stroke="currentColor" stroke-width="2.5"/><path d="m13 14 8-5 8 5M26 27l5-3v6" stroke="#53D9EF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
-        <div><div class="brand-title">ARROW CUBE <span>AWAY</span></div><div class="brand-subtitle">3D PUZZLE · THINK / TAP / ESCAPE</div></div>
+        <div class="brand-icon" aria-hidden="true"><img src="./icon.svg" alt="" width="46" height="46"></div>
+        <div><div class="brand-title">Arrow Cube <span>Away</span></div><div class="brand-subtitle">3D PUZZLE · THINK · TAP · ESCAPE</div></div>
       </div>
       <div class="header-controls">
         <button class="top-nav-btn" id="homeNavBtn" type="button">Home</button>
@@ -53,15 +54,7 @@
         </div>
         <div class="hero-visual" aria-hidden="true">
           <div class="hero-orbit orbit-one"></div><div class="hero-orbit orbit-two"></div>
-          <svg viewBox="0 0 420 380" role="presentation" class="hero-cube">
-            <defs><linearGradient id="cubeFront" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffffff"/><stop offset="1" stop-color="#d8efff"/></linearGradient><linearGradient id="cubeSide" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#aedaf4"/><stop offset="1" stop-color="#72b9e6"/></linearGradient></defs>
-            <path d="M211 40 368 121 211 207 54 121Z" fill="#eff9ff" stroke="#66b2e1" stroke-width="3"/>
-            <path d="M54 121 211 207 211 359 54 273Z" fill="url(#cubeFront)" stroke="#66b2e1" stroke-width="3"/>
-            <path d="M211 207 368 121 368 273 211 359Z" fill="url(#cubeSide)" stroke="#4aa1d7" stroke-width="3"/>
-            <path d="M95 163 143 188 143 265 168 279 M161 257 168 279 145 282" fill="none" stroke="#163a5a" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M260 218 320 187 320 248 263 279 M287 252 263 279 297 284" fill="none" stroke="#163a5a" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M137 124 185 97 236 124 289 97 M263 97 289 97 281 120" fill="none" stroke="#116bd7" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+          <svg viewBox="0 0 420 380" role="presentation" class="hero-cube"><path d="M80 115 210 190 210 340 80 265Z" fill="#F1EADA" stroke="#1B1D22" stroke-width="4" stroke-linejoin="round"/><path d="M210 190 340 115 340 265 210 340Z" fill="#F7F1E4" stroke="#1B1D22" stroke-width="4" stroke-linejoin="round"/><path d="M210 40 340 115 210 190 80 115Z" fill="#FFFDF8" stroke="#1B1D22" stroke-width="4" stroke-linejoin="round"/><g stroke="#D8CFBB" stroke-width="1.2" fill="none"><path d="M106 130 L236 55 M106 100 L236 175" /><path d="M132 145 L262 70 M132 85 L262 160" /><path d="M158 160 L288 85 M158 70 L288 145" /><path d="M184 175 L314 100 M184 55 L314 130" /></g><path d="M112 254 L112 201 L142 218" fill="none" stroke="#1B1D22" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M167 233 L135 230 L148 206Z" fill="#1B1D22" stroke="#1B1D22" stroke-width="3" stroke-linejoin="round"/><path d="M184 307 L184 239" fill="none" stroke="#1B1D22" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M184 209 L198 239 L170 239Z" fill="#1B1D22" stroke="#1B1D22" stroke-width="3" stroke-linejoin="round"/><path d="M233 218 L233 284 L262 268" fill="none" stroke="#1B1D22" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M288 253 L269 280 L256 256Z" fill="#1B1D22" stroke="#1B1D22" stroke-width="3" stroke-linejoin="round"/><path d="M320 164 L320 232" fill="none" stroke="#1B1D22" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M320 261 L307 232 L334 232Z" fill="#1B1D22" stroke="#1B1D22" stroke-width="3" stroke-linejoin="round"/><path d="M213 146 L254 122 L216 100" fill="none" stroke="#1B1D22" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M190 86 L223 89 L209 112Z" fill="#1B1D22" stroke="#1B1D22" stroke-width="3" stroke-linejoin="round"/><path d="M145 122 L300 33" fill="none" stroke="#E5482D" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M328 17 L307 46 L292 20Z" fill="#E5482D" stroke="#E5482D" stroke-width="3" stroke-linejoin="round"/></svg>
           <span class="floating-tag tag-one">↗ PLAN</span><span class="floating-tag tag-two">✦ ESCAPE</span>
         </div>
       </section>
