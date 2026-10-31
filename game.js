@@ -62,7 +62,7 @@
   const escaping = new Set(); // arrows currently animating out; several may run at once
   let sceneWidth = 0, sceneHeight = 0, sceneScale = 0;
   let audioContext = null;
-  let lastTime = 0;
+  let lastTime = 0, animateUntil = 0, lastFrameKey = '';
   let screenMode = 'home', hintsUsed = 0, lastScoreAward = 0, lastLevelScore = 0;
 
   function playSound(kind) {
@@ -261,7 +261,6 @@
     context.beginPath();context.moveTo(corners[0].x,corners[0].y);
     corners.slice(1).forEach(p => context.lineTo(p.x,p.y));context.closePath();
     context.save();
-    context.shadowColor='rgba(27,29,34,.10)';context.shadowBlur=12;
     context.globalAlpha=.62;context.fillStyle=face.tint;context.fill();context.restore();
     context.lineWidth=1.6;
     context.strokeStyle='rgba(27,29,34,.78)';context.stroke();
@@ -293,7 +292,7 @@
     if (motion && fraction>=1) return;
     // Start from rest, then glide at one steady speed: the head leads and the tail
     // follows the same line, with no slow-down while the arrow is still on the cube.
-    const ramp = .2, cruise = 1/(1-ramp/2);
+    const ramp = .1, cruise = 1/(1-ramp/2);
     const eased = fraction < ramp ? cruise*fraction*fraction/(2*ramp) : cruise*(fraction-ramp/2);
     const shape = Core.getEscapeShape(arrow,level.size,motion ? motion.distance*eased : 0);
     const points = shape.points.map(p=>project(pointOnFace(face,p.x,p.y,1.019)));
@@ -366,6 +365,15 @@
       if (Math.abs(difference)>.001) yaw += difference * Math.min(1,elapsed*.013);
       else yaw=desiredYaw;
     }
+    // Repaint only when something visible changed. Redrawing a static 150-arrow cube
+    // every frame kept slow phones busy, so taps waited behind needless frames.
+    const animating = escaping.size>0 || time<animateUntil || (hintedId!==null && time<hintExpiry);
+    let remaining=0;
+    for (const a of level.arrows) if (!a.removed) remaining++;
+    const frameKey = [activeGeneration,yaw.toFixed(4),pitch.toFixed(4),sceneWidth,sceneHeight,
+      hoveredId,remaining,progress.colorful,animating].join('|');
+    if (!animating && frameKey===lastFrameKey) return;
+    lastFrameKey = frameKey;
     context.clearRect(0,0,sceneWidth,sceneHeight);
     drawCubeShadow();
     const faces=faceNormals();
@@ -458,6 +466,7 @@
       hearts--;
       arrow.badUntil=stamp+680;
       blockFeedback={arrowId:arrow.id,blockerId:blocker.id,cell:blocker.cell,until:stamp+1700};
+      animateUntil=stamp+1750;
       playSound('bad');
       updateHUD();
       if (hearts===0) {

@@ -101,3 +101,10 @@ test('several arrows may escape at once and a repeat tap on a blocked arrow is f
   // A second tap while the arrow is still flashing red must not cost another heart.
   assert.match(js,/if \(blocker\) \{[^}]*?if \(\(arrow\.badUntil\|\|0\)>stamp\) return;\s*hearts--;/s);
 });
+
+test('rendering skips unchanged frames and avoids per-frame blur shadows',()=>{
+  const fs=require('node:fs'),path=require('node:path');
+  const js=fs.readFileSync(path.join(__dirname,'../game.js'),'utf8');
+  assert.match(js,/if \(!animating && frameKey===lastFrameKey\) return;/);
+  assert.doesNotMatch(js,/shadowBlur/,'canvas shadowBlur is too slow on phones when repainted every frame');
+});
