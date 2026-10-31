@@ -574,3 +574,21 @@ button:focus-visible,canvas:focus-visible,.name-entry input:focus-visible { outl
   body.playing .game-actions .game-button{min-height:48px;font-size:12px;padding:0 4px}
   body.playing .game-actions .button-icon{margin-right:2px}
 }
+
+/* ── Home: profile and rules fold into buttons ── */
+.home-bottom{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+.home-bottom .home-stats-card{grid-column:1/-1}
+.home-fold{min-width:0;display:flex;flex-direction:column;gap:10px}
+.home-toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:56px;padding:0 20px;border:1px solid var(--rule);border-radius:16px;background:var(--card);color:var(--ink);font:inherit;font-size:12px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;text-align:left}
+.home-toggle:hover{background:var(--paper)}
+.home-toggle:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.home-toggle-mark{position:relative;width:14px;height:14px;flex:0 0 14px}
+.home-toggle-mark::before,.home-toggle-mark::after{content:"";position:absolute;left:0;right:0;top:6px;height:2px;border-radius:1px;background:currentColor;transition:transform .2s}
+.home-toggle-mark::after{transform:rotate(90deg)}
+.home-toggle[aria-expanded="true"] .home-toggle-mark::after{transform:rotate(0)}
+.home-panel[hidden]{display:none}
+@media(max-width:830px){.home-bottom{grid-template-columns:minmax(0,1fr)}}
+@media (prefers-reduced-motion:reduce){.home-toggle-mark::before,.home-toggle-mark::after{transition:none}}
+.home-bottom .home-stats-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.home-bottom .home-stats-grid div:first-child{grid-column:auto}
+.home-panel .section-kicker{display:none}
