@@ -224,4 +224,16 @@ test('compact HUD title size beats the ID-based title rule and fit scaling is wi
   assert.match(css,/body\.playing #levelTitle[^{]*\{font-size:26px/);
   assert.match(game,/Core\.fitSceneScale\(baseScale/);
   assert.match(game,/fitScene\(\);\s*\/\/ Repaint only when something visible changed/);
+test('home screen folds player profile and how-it-works behind buttons',()=>{
+  const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
+  const game=fs.readFileSync(path.join(__dirname,'../game.js'),'utf8');
+  for(const id of ['profile','rules']){
+    assert.match(html,new RegExp(`id="${id}Toggle"[^>]*aria-expanded="false"[^>]*aria-controls="${id}Panel"`));
+    assert.match(html,new RegExp(`id="${id}Panel" hidden`),`${id} panel starts folded`);
+  }
+  // The name field and greeting that game.js reads must survive the restructure.
+  for(const id of ['playerNameInput','saveNameBtn','homePlayerGreeting','homePoints','homeCompleted'])
+    assert.match(html,new RegExp(`id="${id}"`));
+  assert.match(game,/\['profile','rules'\]\.forEach/);
+  assert.match(game,/aria-expanded',String\(open\)/);
 });

@@ -687,6 +687,16 @@
   $('pickLevelBtn').addEventListener('click',()=>{savePlayerName();showScreen('levels');});
   $('playBtn').addEventListener('click',()=>{savePlayerName();startLevel(Math.min(progress.unlocked,progress.lastLevel));showScreen('play');});
   $('saveNameBtn').addEventListener('click',savePlayerName);
+  // Profile and rules stay folded on the home screen until their button is pressed.
+  ['profile','rules'].forEach(name=>{
+    const button=$(name+'Toggle');
+    button.addEventListener('click',()=>{
+      const panel=$(name+'Panel');
+      const open=button.getAttribute('aria-expanded')!=='true';
+      button.setAttribute('aria-expanded',String(open));
+      if (panel) panel.hidden=!open;
+    });
+  });
   $('playerNameInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();savePlayerName();$('playBtn').focus();}});
   $('playerNameInput').addEventListener('change',savePlayerName);
   $('rotateLeftBtn').addEventListener('click',()=>desiredYaw+=Math.PI/2*flip());
