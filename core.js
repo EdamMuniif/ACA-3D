@@ -233,6 +233,17 @@
 
   // Sizes come from the grid, not from fixed pixels: a head wider than one cell would
   // hide the lane beside it, which is what made dense levels unreadable.
+  // A projected cube face has effectively zero surface area when the camera
+  // sees it edge-on. Rendering full-size line caps and triangular heads there
+  // makes many unrelated paths collapse into a solid strip. Fade those paths
+  // out BEFORE they reach that angle; the cube outline remains visible.
+  function faceArrowOpacity(view) {
+    if (!Number.isFinite(view)) return {front:0,ghost:0};
+    const exposure=Math.min(1,Math.max(0,(Math.abs(view)-0.24)/0.28));
+    const smooth=exposure*exposure*(3-2*exposure);
+    return view>0 ? {front:smooth,ghost:0} : {front:0,ghost:.12*smooth};
+  }
+
   function sceneScale(width,height) { return Math.min(width*.325,height*.27,300); }
   function arrowMetrics(cellPitch) {
     const width=Math.max(2.4,Math.min(8,(Number(cellPitch)||0)*.30));
@@ -299,5 +310,5 @@
   // drag still follows the finger after the cube has been tipped over the top.
   function turnDirection(pitch) { return Math.cos(pitch) < 0 ? -1 : 1; }
 
-  return { nearestAngle, turnDirection, FACE_IDS, LEVEL_COUNT, MAX_HEARTS, pickProjectedArrow, buildArrowHead, arrowMetrics, sceneScale, getLevelConfig, generateLevel, isBlocked, getBlocker, getDirection, getEscapeShape, availableArrows, calculateLevelScore, getScoreAward };
+  return { faceArrowOpacity, nearestAngle, turnDirection, FACE_IDS, LEVEL_COUNT, MAX_HEARTS, pickProjectedArrow, buildArrowHead, arrowMetrics, sceneScale, getLevelConfig, generateLevel, isBlocked, getBlocker, getDirection, getEscapeShape, availableArrows, calculateLevelScore, getScoreAward };
 });
