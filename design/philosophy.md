@@ -11,3 +11,9 @@ Colour is rationed with discipline. A near-black ink carries structure. Graphite
 Rhythm comes from accumulation. A lattice of tiny marks, repeated with obsessive regularity, builds a field that rewards sustained looking; hairline ticks, dimension lines and registration crosses build the sense of a document from an imaginary discipline, studied with scientific reverence. The density is patient rather than loud. Meticulous craftsmanship shows in the consistency of the repeated element: the thousandth tick is as true as the first.
 
 Typography is a whisper, never a headline. Small tracked capitals set the plate number and the legend; a single line of italic serif may speak once, quietly, like a margin note in a master's hand. Text is an instrument of the drawing, aligned to its measure, contained well inside the margins, never competing with the line work. The final piece should feel as though it took countless hours, were checked by a perfectionist at the top of the field, and could hang, unframed and unexplained, in a museum of working drawings.
+
+---
+
+## Addendum: the thin line (play-first revision)
+
+The first drawing argued with too much ink. A line must be narrower than the lane it travels in, and a head must never be wider than the cell it points through: mark size is measured from the grid, not from the thumb. The cube is drawn larger and is given the whole sheet, because the puzzle is the plate and everything else is margin. Far faces are drawn as ghosts in glass, hairline-faint and visible, a promise of what lies behind that is neither a distraction nor a trap. Faces turned edge-on yield to the ones facing the viewer. The one vermilion still belongs to the single arrow that leaves.
