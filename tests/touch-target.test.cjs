@@ -107,4 +107,6 @@ test('rendering skips unchanged frames and avoids per-frame blur shadows',()=>{
   const js=fs.readFileSync(path.join(__dirname,'../game.js'),'utf8');
   assert.match(js,/if \(!animating && frameKey===lastFrameKey\) return;/);
   assert.doesNotMatch(js,/shadowBlur/,'canvas shadowBlur is too slow on phones when repainted every frame');
+  // A resize clears the canvas, so the cached frame must be invalidated with it.
+  assert.match(js,/function refreshSize\(\)[\s\S]*?lastFrameKey='';\s*\}/);
 });

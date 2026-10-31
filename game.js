@@ -392,6 +392,8 @@
     if (canvas.width!==w||canvas.height!==h) {canvas.width=w;canvas.height=h;}
     context.setTransform(ratio,0,0,ratio,0,0);
     sceneScale=Math.min(sceneWidth*.285,sceneHeight*.27,225);
+    // Resizing clears the canvas, including a DPR-only change that keeps the CSS size.
+    lastFrameKey='';
   }
   function hitArrow(x,y,pointerType='touch') {
     // All projected body segments and the full arrowhead are interactive.
