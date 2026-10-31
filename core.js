@@ -234,6 +234,15 @@
   // Sizes come from the grid, not from fixed pixels: a head wider than one cell would
   // hide the lane beside it, which is what made dense levels unreadable.
   function sceneScale(width,height) { return Math.min(width*.325,height*.27,300); }
+  // The cube's rotated, perspective-projected corners can reach past the stage on a
+  // narrow screen (a diagonal top view is the widest). Shrink just enough to keep the
+  // whole cube inside, leaving a small margin; ex/ey are extents in unit-scale pixels.
+  function fitSceneScale(base,width,height,ex,ey,margin=6) {
+    const limits=[base];
+    if (ex>0) limits.push((width*.5-margin)/ex);
+    if (ey>0) limits.push((height*.46-margin)/ey);
+    return Math.max(1,Math.min(...limits));
+  }
   function arrowMetrics(cellPitch) {
     const width=Math.max(2.4,Math.min(8,(Number(cellPitch)||0)*.30));
     const head=buildArrowHead({x:1,y:0},{x:0,y:0},width);
@@ -357,5 +366,5 @@
   // drag still follows the finger after the cube has been tipped over the top.
   function turnDirection(pitch) { return Math.cos(pitch) < 0 ? -1 : 1; }
 
-  return { nearestAngle, turnDirection, faceArrowOpacity, FACE_IDS, LEVEL_COUNT, MAX_HEARTS, pickProjectedArrow, buildArrowHead, buildFlatArrowGeometry, arrowMetrics, sceneScale, getLevelConfig, generateLevel, isBlocked, getBlocker, getDirection, getEscapeShape, availableArrows, calculateLevelScore, getScoreAward };
+  return { nearestAngle, turnDirection, faceArrowOpacity, FACE_IDS, LEVEL_COUNT, MAX_HEARTS, pickProjectedArrow, buildArrowHead, buildFlatArrowGeometry, arrowMetrics, sceneScale, fitSceneScale, getLevelConfig, generateLevel, isBlocked, getBlocker, getDirection, getEscapeShape, availableArrows, calculateLevelScore, getScoreAward };
 });

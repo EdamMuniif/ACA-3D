@@ -66,7 +66,7 @@
   let lastToastTimer = 0;
   let activeGeneration = 0;
   const escaping = new Set(); // arrows currently animating out; several may run at once
-  let sceneWidth = 0, sceneHeight = 0, sceneScale = 0;
+  let sceneWidth = 0, sceneHeight = 0, sceneScale = 0, baseScale = 0;
   let audioContext = null;
   let lastTime = 0, animateUntil = 0, lastFrameKey = '';
   let screenMode = 'home', hintsUsed = 0, lastScoreAward = 0, lastLevelScore = 0;
@@ -226,6 +226,16 @@
     const x = p[0]*c + p[2]*s;
     const z = -p[0]*s + p[2]*c;
     return [x,p[1]*cx-z*sx,p[1]*sx+z*cx];
+  }
+  // Keep the whole rotated cube on screen: the diagonal top view is wider than the front.
+  function fitScene() {
+    let ex=0,ey=0;
+    for (const a of [-1,1]) for (const b of [-1,1]) for (const d of [-1,1]) {
+      const [x,y,z]=rotateVector([a,b,d]);
+      const k=5.6/(5.6-z);
+      ex=Math.max(ex,Math.abs(x)*k);ey=Math.max(ey,Math.abs(y)*k);
+    }
+    sceneScale=Core.fitSceneScale(baseScale,sceneWidth,sceneHeight,ex,ey);
   }
   function pointOnFace(face,x,y,normalOffset=1) {
     const a = (x * 2 / level.size - 1), b = (y * 2 / level.size - 1);
@@ -391,6 +401,7 @@
         pitch-=turns; desiredPitch-=turns;
       }
     }
+    fitScene();
     // Repaint only when something visible changed. Redrawing a static 150-arrow cube
     // every frame kept slow phones busy, so taps waited behind needless frames.
     const animating = escaping.size>0 || time<animateUntil || (hintedId!==null && time<hintExpiry);
@@ -435,7 +446,8 @@
     const w=Math.round(sceneWidth*ratio),h=Math.round(sceneHeight*ratio);
     if (canvas.width!==w||canvas.height!==h) {canvas.width=w;canvas.height=h;}
     context.setTransform(ratio,0,0,ratio,0,0);
-    sceneScale=Core.sceneScale(sceneWidth,sceneHeight);
+    baseScale=Core.sceneScale(sceneWidth,sceneHeight);
+    fitScene();
     // Resizing clears the canvas, including a DPR-only change that keeps the CSS size.
     lastFrameKey='';
   }
