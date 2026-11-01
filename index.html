@@ -11,10 +11,10 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="preload" href="./fonts/InstrumentSans-Regular.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="./fonts/InstrumentSerif-Regular.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="./styles.css?v=25">
-  <script defer src="./core.js?v=25"></script>
-  <script defer src="./game.js?v=25"></script>
-  <script defer src="./home-preview.js?v=25"></script>
+  <link rel="stylesheet" href="./styles.css?v=26">
+  <script defer src="./core.js?v=26"></script>
+  <script defer src="./game.js?v=26"></script>
+  <script defer src="./home-preview.js?v=26"></script>
 </head>
 <body>
   <div class="app-shell">
@@ -126,6 +126,14 @@
           <div class="stage-glow"></div>
           <div class="scene-top-note"><span class="pulse-point"></span> <span id="stageNote">DRAG TO ROTATE · TAP AN ARROW TO ESCAPE</span></div>
           <canvas id="gameCanvas" aria-label="Rotatable 3D arrow cube. Drag to rotate. Tap an arrow to release it." tabindex="0"></canvas>
+          <div class="stage-view-tools" role="group" aria-label="Cube view controls">
+            <button type="button" id="focusFaceBtn" class="view-chip" aria-pressed="false" title="Show only the face nearest the camera">Focus face</button>
+            <div class="zoom-control" role="group" aria-label="Cube zoom">
+              <button type="button" id="zoomOutBtn" aria-label="Zoom out" disabled>−</button>
+              <output id="zoomValue" aria-live="polite">100%</output>
+              <button type="button" id="zoomInBtn" aria-label="Zoom in">+</button>
+            </div>
+          </div>
           <div class="compass" aria-hidden="true"><span class="compass-cross">✦</span><span>360° VIEW</span></div>
           <div class="stage-toast" id="toast" role="status" aria-live="polite"></div>
           <div class="stage-bottom-note">FOLLOW THE ARROWHEAD <span class="note-dot">·</span> CLEAR THE EXIT</div>

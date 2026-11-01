@@ -948,3 +948,47 @@ body.on-home .home-preview-canvas{
   body.on-home .home-hero-details .home-actions .hero-btn{min-height:39px}
   body.on-home .home-hero-details .home-footnote{display:none}
 }
+
+/* V26 — compact view controls; isolated from existing Home styles. */
+.stage-view-tools{
+  position:absolute;z-index:6;top:12px;right:12px;
+  display:flex;align-items:center;gap:6px;
+  pointer-events:auto;
+}
+.stage-view-tools button{
+  color:#26292f;background:rgba(250,246,238,.96);
+  border:1px solid #d5cbbb;border-radius:9px;
+  font:700 11px/1 'Instrument Sans',system-ui,sans-serif;
+  cursor:pointer;touch-action:manipulation;
+}
+.stage-view-tools button:focus-visible{outline:2px solid #26292f;outline-offset:2px}
+.stage-view-tools .view-chip{height:34px;padding:0 11px;white-space:nowrap}
+.stage-view-tools .view-chip[aria-pressed="true"]{color:#fff;background:#26292f;border-color:#26292f}
+.stage-view-tools .zoom-control{
+  display:flex;align-items:center;height:34px;
+  background:rgba(250,246,238,.96);border:1px solid #d5cbbb;
+  border-radius:9px;overflow:hidden;
+}
+.stage-view-tools .zoom-control button{
+  min-width:33px;height:32px;padding:0;border:0;border-radius:0;
+  font-size:18px;background:transparent;
+}
+.stage-view-tools .zoom-control button:disabled{opacity:.3;cursor:default}
+.stage-view-tools .zoom-control output{
+  display:inline-block;min-width:36px;text-align:center;
+  color:#26292f;font:700 10px/1 'Instrument Sans',system-ui,sans-serif;
+}
+.stage .compass{top:56px}
+@media(max-width:700px){
+  body.playing .stage-view-tools{top:7px;right:6px;gap:5px}
+  body.playing .stage-view-tools .view-chip{height:32px;padding:0 8px}
+  body.playing .stage-view-tools .zoom-control{height:32px}
+  body.playing .stage-view-tools .zoom-control button{height:30px;min-width:31px}
+}
+@media(max-height:500px) and (orientation:landscape){
+  body.playing .stage{
+    height:max(170px,calc(100dvh - 174px));
+    min-height:170px;
+  }
+  body.playing .stage-view-tools{top:6px;right:6px}
+}
