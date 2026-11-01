@@ -24,7 +24,11 @@
     try {
       const parsed = JSON.parse(localStorage.getItem(PERSIST_KEY));
       if (!parsed || typeof parsed !== 'object') return { ...base };
-      const completed = Array.isArray(parsed.completed) ? parsed.completed.filter(n => Number.isInteger(n) && n >= 1 && n <= 15) : [];
+      const completed = Array.isArray(parsed.completed) ? parsed.completed.filter(n => Number.isInteger(n) && n >= 1 && n <= Core.LEVEL_COUNT) : [];
+      const oldUnlocked=Number(parsed.unlocked)||1;
+      // Existing players who cleared former level 15 must reach level 16
+      // without replaying the old final stage.
+      const migratedUnlocked=Math.max(oldUnlocked,1,...completed.map(n=>n+1));
       const bestScores = {};
       if (parsed.bestScores && typeof parsed.bestScores === 'object' && !Array.isArray(parsed.bestScores)) {
         for(let n=1;n<=Core.LEVEL_COUNT;n++) {
@@ -34,8 +38,8 @@
       }
       const playerName=typeof parsed.playerName === 'string' ? parsed.playerName.trim().slice(0,24) : '';
       return {
-        unlocked:Math.min(15,Math.max(1,Number(parsed.unlocked) || 1)),
-        lastLevel:Math.min(15,Math.max(1,Number(parsed.lastLevel) || 1)),
+        unlocked:Math.min(Core.LEVEL_COUNT,Math.max(1,migratedUnlocked)),
+        lastLevel:Math.min(Core.LEVEL_COUNT,Math.max(1,Number(parsed.lastLevel) || 1)),
         completed:[...new Set(completed)],
         sound:parsed.sound !== false,
         colorful:parsed.colorful === true,
@@ -70,6 +74,8 @@
   let audioContext = null;
   let lastTime = 0, animateUntil = 0, lastFrameKey = '';
   let screenMode = 'home', hintsUsed = 0, lastScoreAward = 0, lastLevelScore = 0;
+  const LEVEL_PAGE_SIZE = 20;
+  let levelPage = 0;
 
   function playSound(kind) {
     if (!progress.sound) return;
@@ -111,7 +117,7 @@
     $('heroPlayerName').textContent=name;
     if(document.activeElement!==$('playerNameInput')) $('playerNameInput').value=name;
     $('homePoints').textContent=progress.points.toLocaleString();
-    $('homeCompleted').textContent=progress.completed.length+' / 15';
+    $('homeCompleted').textContent=progress.completed.length+' / '+Core.LEVEL_COUNT;
     $('homeNextLevel').textContent=String(progress.unlocked).padStart(2,'0');
     $('homeProgressFill').style.width=(progress.completed.length/Core.LEVEL_COUNT*100)+'%';
     $('homeProgressTrack').setAttribute('aria-valuenow',String(progress.completed.length));
@@ -159,7 +165,7 @@
     $('levelsNavBtn').setAttribute('aria-pressed',String(which==='levels'));
     hideModal();
     updateProfileDisplays();
-    if(which==='levels') renderLevels();
+    if(which==='levels') { levelPage=Math.floor((currentLevel-1)/LEVEL_PAGE_SIZE);renderLevels(); }
     document.body.classList.toggle('playing',which==='play');
     if(which==='play') { refreshSize(); requestAnimationFrame(refreshSize); }
     window.scrollTo(0,0);
@@ -167,7 +173,7 @@
 
   function updateHUD() {
     $('levelTitle').innerHTML = `<em>Level</em> <span class="num">${String(currentLevel).padStart(2,'0')}</span>`;
-    $('levelFraction').textContent = `${String(currentLevel).padStart(2,'0')} / 15`;
+    $('levelFraction').textContent = `${String(currentLevel).padStart(2,'0')} / ${Core.LEVEL_COUNT}`;
     $('difficultyTag').textContent = level.tier.toUpperCase();
     $('difficultyTag').className = 'difficulty-tag ' + level.tier.toLowerCase();
     $('hearts').innerHTML = Array.from({length:Core.MAX_HEARTS},(_,i) => `<span class="${i < hearts ? '' : 'lost'}" aria-hidden="true">♥</span>`).join('');
@@ -182,42 +188,59 @@
     $('stageNote').textContent = remaining === 0 ? 'ALL ARROWS CLEARED' : 'ROTATE · FOLLOW THE ARROWHEAD · FIND A CLEAR EXIT';
   }
 
-  function renderLevels() {
-    for(const [smallId,largeId,start] of [
-      ['easyLevels','easyLevelsScreen',1],
-      ['mediumLevels','mediumLevelsScreen',6],
-      ['hardLevels','hardLevelsScreen',11]
-    ]) {
-      $(smallId).replaceChildren();
-      $(largeId).replaceChildren();
-      for(let n=start;n<start+5;n++) {
-        const unlocked=n<=progress.unlocked;
-        const complete=progress.completed.includes(n);
-        const selected=n===currentLevel;
-        const best=Number(progress.bestScores[n]||0);
-        const openLevel=()=>{startLevel(n);showScreen('play');};
-        const small=document.createElement('button');
-        small.type='button';
-        small.className='level-tile'+(complete?' completed':'')+(selected?' current':'')+(!unlocked?' locked':'');
-        small.textContent=String(n).padStart(2,'0');
-        small.disabled=!unlocked;
-        small.setAttribute('aria-label',`Level ${n}, ${!unlocked?'locked':complete?'completed':'unlocked'}`);
-        if(unlocked)small.addEventListener('click',openLevel);
-        $(smallId).appendChild(small);
-
-        const tile=document.createElement('button');
-        tile.type='button';
-        tile.className='level-hub-tile'+(complete?' completed':'')+(selected?' current':'')+(!unlocked?' locked':'');
-        tile.disabled=!unlocked;
-        tile.setAttribute('aria-label',`Level ${n}, ${!unlocked?'locked':complete?'completed':'available'}`);
-        const num=document.createElement('span');num.className='tile-number';num.textContent=String(n).padStart(2,'0');
-        const caption=document.createElement('span');caption.className='tile-caption';
-        caption.textContent=!unlocked?'LOCKED':complete?`✓ BEST ${best.toLocaleString()}`:selected?'CONTINUE':'PLAY';
-        tile.append(num,caption);
-        if(unlocked)tile.addEventListener('click',openLevel);
-        $(largeId).appendChild(tile);
-      }
+  function levelButton(n,compact=false) {
+    const unlocked=n<=progress.unlocked;
+    const complete=progress.completed.includes(n);
+    const selected=n===currentLevel;
+    const best=Number(progress.bestScores[n]||0);
+    const button=document.createElement('button');
+    button.type='button';
+    button.className=(compact?'level-tile':'level-hub-tile')+
+      (complete?' completed':'')+(selected?' current':'')+(!unlocked?' locked':'');
+    button.disabled=!unlocked;
+    button.setAttribute('aria-label',`Level ${n}, ${!unlocked?'locked':complete?'completed':'available'}`);
+    if(compact)button.textContent=String(n).padStart(2,'0');
+    else {
+      const num=document.createElement('span');num.className='tile-number';
+      num.textContent=String(n).padStart(2,'0');
+      const caption=document.createElement('span');caption.className='tile-caption';
+      caption.textContent=!unlocked?'LOCKED':complete?`✓ BEST ${best.toLocaleString()}`:selected?'CONTINUE':'PLAY';
+      button.append(num,caption);
     }
+    if(unlocked)button.addEventListener('click',()=>{
+      startLevel(n);
+      showScreen('play');
+    });
+    return button;
+  }
+  function renderLevels() {
+    const pages=Math.ceil(Core.LEVEL_COUNT/LEVEL_PAGE_SIZE);
+    levelPage=Math.max(0,Math.min(pages-1,levelPage));
+    const first=levelPage*LEVEL_PAGE_SIZE+1;
+    const last=Math.min(Core.LEVEL_COUNT,first+LEVEL_PAGE_SIZE-1);
+    $('levelPageLabel').textContent=`Levels ${String(first).padStart(2,'0')}–${last} of ${Core.LEVEL_COUNT}`;
+    $('prevLevelPage').disabled=levelPage===0;
+    $('nextLevelPage').disabled=levelPage===pages-1;
+    const container=$('levelSections');
+    container.replaceChildren();
+    for(const tier of Core.LEVEL_TIERS){
+      const from=Math.max(first,tier.start),to=Math.min(last,tier.end);
+      if(from>to)continue;
+      const section=document.createElement('section');section.className='level-hub-group';
+      const heading=document.createElement('div');heading.className='level-group-heading';
+      const dot=document.createElement('span');dot.className='level-group-dot '+tier.name.toLowerCase();
+      const title=document.createElement('h2');title.textContent=tier.name;
+      const range=document.createElement('p');range.textContent=`Levels ${from}–${to}`;
+      heading.append(dot,title,range);
+      const grid=document.createElement('div');grid.className='level-hub-grid';
+      for(let n=from;n<=to;n++)grid.appendChild(levelButton(n));
+      section.append(heading,grid);container.appendChild(section);
+    }
+    const nearby=$('nearbyLevels');
+    nearby.replaceChildren();
+    const aroundFirst=Math.max(1,Math.min(Core.LEVEL_COUNT-6,currentLevel-3));
+    for(let n=aroundFirst;n<=Math.min(Core.LEVEL_COUNT,aroundFirst+6);n++)
+      nearby.appendChild(levelButton(n,true));
   }
 
   function startLevel(index) {
@@ -560,7 +583,8 @@
     progress.bestScores[currentLevel]=outcome.best;
     progress.points=Object.values(progress.bestScores).reduce((sum,n)=>sum+n,0);
     if (!progress.completed.includes(currentLevel)) progress.completed.push(currentLevel);
-    progress.unlocked=Math.min(15,Math.max(progress.unlocked,currentLevel+1));
+    progress.unlocked=Math.min(Core.LEVEL_COUNT,Math.max(progress.unlocked,currentLevel+1));
+    progress.lastLevel=Math.min(Core.LEVEL_COUNT,currentLevel+1);
     persist();updateHUD();renderLevels();
     showWinModal();
   }
@@ -620,7 +644,7 @@
   }
   function showWinModal() {
     playSound('win');
-    const final=currentLevel===15;
+    const final=currentLevel===Core.LEVEL_COUNT;
     openModal({ icon:'✦',eyebrow:final?'ALL CHALLENGES COMPLETE':'PUZZLE COMPLETE',
       title:final?'Cube master!':'Level cleared!',
       message:final?'Every level completed! Replay to beat your best scores.':'Every arrow escaped. Your score is saved on this device.',
@@ -687,6 +711,9 @@
   $('homeNavBtn').addEventListener('click',()=>showScreen('home'));
   $('levelsNavBtn').addEventListener('click',()=>showScreen('levels'));
   $('levelBackBtn').addEventListener('click',()=>showScreen('home'));
+  $('prevLevelPage').addEventListener('click',()=>{levelPage--;renderLevels();});
+  $('nextLevelPage').addEventListener('click',()=>{levelPage++;renderLevels();});
+  $('allLevelsBtn').addEventListener('click',()=>showScreen('levels'));
   $('pickLevelBtn').addEventListener('click',()=>{savePlayerName();showScreen('levels');});
   $('playBtn').addEventListener('click',()=>{savePlayerName();startLevel(Math.min(progress.unlocked,progress.lastLevel));showScreen('play');});
   $('saveNameBtn').addEventListener('click',savePlayerName);

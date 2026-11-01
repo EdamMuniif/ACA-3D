@@ -187,3 +187,13 @@ The 3D cube stays rotatable, but **every arrow is a flat 2D printed path on its 
 ## V21 — compact Home UI
 
 The home page has **one** progress summary, not duplicate counters in the hero and the progress card. The progress card shows total points, cleared levels, and highest unlocked level in one compact row with a progress bar. Two circular icon buttons at the **top-right of Home** open the editable Player Profile and How It Works panels. The panels are mutually exclusive, close when navigating away or pressing Escape, and are otherwise hidden to reduce scroll on phones. The home hero and artwork are smaller; the illustration is omitted on narrow screens. No player saves, puzzle mechanics, scoring, or level content change.
+
+## V22 — 100 levels for friend testing
+
+- **100 progressive levels** in six tiers: Easy 1–5, Medium 6–10, Hard 11–30, Expert 31–60, Master 61–85, Legend 86–100.
+- **Levels 1–15 are unchanged** (same deterministic layout and scoring). Levels 16–100 use a new deterministic constructive generator with increasing target arrows (151 to 256), larger boards (14 to 18 cells), longer winding paths (up to 10 cells) and blocking-dependency weighting. A generated arrow is free when inserted, ensuring the board can be solved in reverse construction order.
+- **100-level selection** is paged 20 at a time, with six tier groups and locked/completed/best-score states. The desktop sidebar shows nearby levels and a button to open the full selector.
+- Existing save data migrates automatically; players who finished level 15 can continue on level 16 without replaying. Highest unlocked, completed count, progress percentage, and win flow now support 100 levels.
+- Tier score bonuses: Easy 25, Medium 75, Hard 150, Expert 225, Master 300, Legend 400. Replays still award only the increase over the best score.
+- The cube remains 3D with perspective-correct thick, flat printed arrows; full-body taps, five hearts, arrow escape physics, and audio settings are unchanged.
+- **Before inviting friends**, verify generation and solvability via `node --test tests/*.test.cjs`, then perform a hands-on mobile check at Levels 1, 15, 16, 30, 60, and 100 (using a test save in an isolated browser only if needed). Unlocking follows sequential completion; no public leaderboard or online account is provided.

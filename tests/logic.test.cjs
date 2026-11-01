@@ -37,7 +37,11 @@ test('difficulty increases, level bounds are clamped',()=>{
   assert.equal(Core.getLevelConfig(1).tier,'Easy');
   assert.equal(Core.getLevelConfig(6).tier,'Medium');
   assert.equal(Core.getLevelConfig(11).tier,'Hard');
-  assert.equal(Core.getLevelConfig(999).level,15);
+  assert.equal(Core.getLevelConfig(999).level,100);
+  assert.equal(Core.LEVEL_COUNT,100);
+  assert.equal(Core.getLevelConfig(31).tier,'Expert');
+  assert.equal(Core.getLevelConfig(61).tier,'Master');
+  assert.equal(Core.getLevelConfig(86).tier,'Legend');
   assert.equal(Core.getLevelConfig(-5).level,1);
 });
 

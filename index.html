@@ -4,16 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#F3EEE3">
-  <meta name="description" content="Arrow Cube Away — rotate a 3D cube, find free arrows, and solve 15 logic puzzles from easy to hard. Play offline.">
+  <meta name="description" content="Arrow Cube Away — rotate a 3D cube, find free arrows, and solve 100 increasingly challenging logic puzzles. Play offline.">
   <title>Arrow Cube Away — 3D Puzzle</title>
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="preload" href="./fonts/InstrumentSans-Regular.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="./fonts/InstrumentSerif-Regular.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="./styles.css?v=21">
-  <script defer src="./core.js?v=21"></script>
-  <script defer src="./game.js?v=21"></script>
+  <link rel="stylesheet" href="./styles.css?v=22">
+  <script defer src="./core.js?v=22"></script>
+  <script defer src="./game.js?v=22"></script>
 </head>
 <body>
   <div class="app-shell">
@@ -66,7 +66,7 @@
           <span class="home-kicker"><span class="home-led"></span> ARROW ESCAPE PUZZLE</span>
           <p class="hero-greeting">Ready, <strong id="heroPlayerName">Player</strong>?</p>
           <h1 id="homeHeading">Find the<br><span>way out.</span></h1>
-          <p>Find a free arrow, tap to release it, and clear the cube. Can you solve all 15 levels?</p>
+          <p>Find a free arrow, tap to release it, and clear the cube. Can you solve all 100 levels?</p>
           <div class="home-actions">
             <button type="button" class="hero-btn hero-primary" id="playBtn"><span aria-hidden="true">▶</span> <span id="playBtnLabel">Play now</span></button>
             <button type="button" class="hero-btn hero-outline" id="pickLevelBtn">Levels <span aria-hidden="true">→</span></button>
@@ -84,23 +84,26 @@
           <div class="section-kicker">YOUR PROGRESS</div>
           <div class="home-stats-grid">
             <div><strong id="homePoints">0</strong><span>TOTAL POINTS</span></div>
-            <div><strong id="homeCompleted">0 / 15</strong><span>LEVELS CLEARED</span></div>
+            <div><strong id="homeCompleted">0 / 100</strong><span>LEVELS CLEARED</span></div>
             <div><strong id="homeNextLevel">01</strong><span>HIGHEST UNLOCKED</span></div>
           </div>
-          <div class="home-progress-rail" role="progressbar" aria-label="Levels cleared" aria-valuemin="0" aria-valuemax="15" aria-valuenow="0" id="homeProgressTrack"><span id="homeProgressFill"></span></div>
+          <div class="home-progress-rail" role="progressbar" aria-label="Levels cleared" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="homeProgressTrack"><span id="homeProgressFill"></span></div>
         </div>
       </section>
     </main>
 
     <main class="hub-screen level-hub" id="levelsScreen" aria-labelledby="levelsHeading" hidden>
       <div class="level-hub-heading">
-        <div><div class="section-kicker">YOUR PUZZLE JOURNEY</div><h1 id="levelsHeading">Choose a level.</h1><p>Complete levels to unlock the next stage. Replay cleared levels to improve your best score.</p></div>
+        <div><div class="section-kicker">YOUR PUZZLE JOURNEY</div><h1 id="levelsHeading">Choose a level.</h1><p>100 levels · increasingly intricate paths and blockers. Clear one stage to unlock the next.</p></div>
         <button type="button" id="levelBackBtn" class="hero-btn hero-outline">← Back home</button>
       </div>
       <div class="level-hub-stats"><span id="levelPlayerLabel">Player</span><span><b id="levelPointsLabel">0</b> points</span><span><b id="levelUnlockedLabel">1</b> unlocked</span></div>
-      <section class="level-hub-group"><div class="level-group-heading"><span class="level-group-dot easy"></span><h2>Easy</h2><p>Levels 01–05</p></div><div class="level-hub-grid" id="easyLevelsScreen"></div></section>
-      <section class="level-hub-group"><div class="level-group-heading"><span class="level-group-dot medium"></span><h2>Medium</h2><p>Levels 06–10</p></div><div class="level-hub-grid" id="mediumLevelsScreen"></div></section>
-      <section class="level-hub-group"><div class="level-group-heading"><span class="level-group-dot hard"></span><h2>Hard</h2><p>Levels 11–15</p></div><div class="level-hub-grid" id="hardLevelsScreen"></div></section>
+      <nav class="level-pager" aria-label="Browse levels">
+        <button type="button" id="prevLevelPage" aria-label="Previous 20 levels">← Previous</button>
+        <span id="levelPageLabel" aria-live="polite">Levels 01–20 of 100</span>
+        <button type="button" id="nextLevelPage" aria-label="Next 20 levels">Next →</button>
+      </nav>
+      <div id="levelSections" class="level-sections" aria-label="Level groups"></div>
     </main>
 
     <div id="playScreen" hidden>
@@ -139,16 +142,13 @@
           <div class="card-eyebrow">THE OBJECTIVE</div>
           <h2>Find the way <em>out.</em></h2>
           <p>Every arrow needs a clear exit. Move the free ones first to unlock the rest.</p>
-          <div class="stat-grid"><div class="stat-tile"><strong id="statSolved">00</strong><span>PUZZLES WON</span></div><div class="stat-tile"><strong>15</strong><span>TOTAL LEVELS</span></div></div>
+          <div class="stat-grid"><div class="stat-tile"><strong id="statSolved">00</strong><span>PUZZLES WON</span></div><div class="stat-tile"><strong>100</strong><span>TOTAL LEVELS</span></div></div>
         </div>
         <div class="side-card level-card">
           <div class="card-heading"><div><div class="card-eyebrow">YOUR JOURNEY</div><h2>Choose a level</h2></div><span class="card-heading-icon" aria-hidden="true">▦</span></div>
-          <div class="tier-heading"><span class="tier-marker easy"></span> EASY <span>01 — 05</span></div>
-          <div class="level-grid" id="easyLevels"></div>
-          <div class="tier-heading"><span class="tier-marker medium"></span> MEDIUM <span>06 — 10</span></div>
-          <div class="level-grid" id="mediumLevels"></div>
-          <div class="tier-heading"><span class="tier-marker hard"></span> HARD <span>11 — 15</span></div>
-          <div class="level-grid" id="hardLevels"></div>
+          <p class="level-nearby-label">Nearby stages</p>
+          <div class="level-grid" id="nearbyLevels"></div>
+          <button type="button" class="all-levels-button" id="allLevelsBtn">Browse all 100 levels →</button>
         </div>
         <div class="side-card tips-card"><div class="card-eyebrow">QUICK RULES</div><div class="tip"><span class="tip-num">01</span><span>Drag the cube to see all six sides.</span></div><div class="tip"><span class="tip-num">02</span><span>Tap an arrow with an unobstructed exit path.</span></div><div class="tip"><span class="tip-num">03</span><span>A blocked move costs one heart.</span></div><div class="tip"><span class="tip-num">04</span><span>Clear every arrow to win the level.</span></div></div>
       </aside>

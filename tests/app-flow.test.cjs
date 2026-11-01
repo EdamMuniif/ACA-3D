@@ -25,7 +25,7 @@ test('the game HTML defines all DOM references used by game.js',()=>{
   const refs=new Set([...js.matchAll(/\$\('([^']+)'\)/g)].map(m=>m[1]));
   for(const id of refs) assert.ok(ids.has(id),`Missing HTML element: ${id}`);
   for(const id of ['homeScreen','levelsScreen','playScreen','playerNameInput',
-    'homePoints','hudPoints','resetBtn','easyLevelsScreen','hardLevelsScreen'])
+    'homePoints','hudPoints','resetBtn','levelSections','prevLevelPage','nextLevelPage','nearbyLevels'])
     assert.ok(ids.has(id));
 });
 
@@ -81,7 +81,7 @@ test('home, level select, play, name and restart function in the browser control
   assert.equal(el('playScreen').hidden,true);
   assert.ok(raf.length>0,'Animation loop must initialize');
   assert.equal(el('homePoints').textContent,'0');
-  assert.equal(el('homeCompleted').textContent,'0 / 15');
+  assert.equal(el('homeCompleted').textContent,'0 / 100');
   assert.equal(el('homeNextLevel').textContent,'01');
   assert.equal(el('homeProgressTrack').attrs['aria-valuenow'],'0');
   assert.equal(el('profileToggle').attrs['aria-expanded'],'false');
@@ -109,10 +109,17 @@ test('home, level select, play, name and restart function in the browser control
   assert.equal(el('profilePanel').hidden,true);
   assert.equal(el('profileToggle').attrs['aria-expanded'],'false');
   assert.equal(el('levelsScreen').hidden,false);
-  assert.equal(el('easyLevelsScreen').children.length,5);
-  assert.equal(el('easyLevelsScreen').children[0].disabled,false);
-  assert.equal(el('easyLevelsScreen').children[1].disabled,true);
-  el('easyLevelsScreen').children[0].click();
+  assert.equal(el('levelSections').children.length,3,'first page shows Easy, Medium and Hard');
+  assert.equal(el('levelPageLabel').textContent,'Levels 01–20 of 100');
+  const firstGrid=el('levelSections').children[0].children[1];
+  assert.equal(firstGrid.children.length,5);
+  assert.equal(firstGrid.children[0].disabled,false);
+  assert.equal(firstGrid.children[1].disabled,true);
+  el('nextLevelPage').click();
+  assert.equal(el('levelPageLabel').textContent,'Levels 21–40 of 100');
+  el('prevLevelPage').click();
+  assert.equal(el('levelPageLabel').textContent,'Levels 01–20 of 100');
+  el('levelSections').children[0].children[1].children[0].click();
   assert.equal(el('playScreen').hidden,false);
   assert.equal(el('homeScreen').hidden,true);
   assert.equal(el('hudPlayerName').textContent,'Ada');
@@ -124,13 +131,41 @@ test('home, level select, play, name and restart function in the browser control
 });
 test('legacy saves migrate without losing unlocked level progress',()=>{
   const {elements,localStorage}=bootGame({unlocked:4,lastLevel:3,completed:[1,2],sound:false});
-  assert.equal(elements.get('homeCompleted').textContent,'2 / 15');
+  assert.equal(elements.get('homeCompleted').textContent,'2 / 100');
   assert.equal(elements.get('homeNextLevel').textContent,'04');
   assert.equal(elements.get('homePoints').textContent,'0');
   elements.get('playBtn').click();
   assert.equal(elements.get('levelTitle').textContent,'Level 03');
   assert.equal(elements.get('playScreen').hidden,false);
   assert.equal(JSON.parse(localStorage.getItem('arrow-cube-away-v1')).playerName,'Player');
+});
+
+test('completed legacy level 15 immediately unlocks level 16',()=>{
+  const data={unlocked:15,lastLevel:15,completed:Array.from({length:15},(_,i)=>i+1),
+    playerName:'Tester',bestScores:{'15':1700}};
+  const {elements,localStorage}=bootGame(data);
+  assert.equal(elements.get('homeNextLevel').textContent,'16');
+  assert.equal(elements.get('homeCompleted').textContent,'15 / 100');
+  assert.equal(elements.get('homePoints').textContent,'1,700');
+  elements.get('playBtn').click();
+  assert.equal(elements.get('levelTitle').textContent,'Level 16');
+  assert.equal(JSON.parse(localStorage.getItem('arrow-cube-away-v1')).unlocked,16);
+});
+
+test('100-level map paginates and keeps future levels locked',()=>{
+  const {elements}=bootGame({unlocked:52,lastLevel:52,completed:Array.from({length:51},(_,i)=>i+1)});
+  elements.get('levelsNavBtn').click();
+  assert.equal(elements.get('levelPageLabel').textContent,'Levels 41–60 of 100');
+  const sections=elements.get('levelSections').children;
+  assert.ok(sections.length>0);
+  const tiles=sections.flatMap(section=>section.children[1].children);
+  assert.equal(tiles.length,20);
+  assert.equal(tiles[11].disabled,false,'52 is unlocked');
+  assert.equal(tiles[12].disabled,true,'53 remains locked');
+  for(let i=0;i<2;i++)elements.get('nextLevelPage').click();
+  assert.equal(elements.get('levelPageLabel').textContent,'Levels 81–100 of 100');
+  assert.equal(elements.get('nextLevelPage').disabled,true);
+  assert.equal(elements.get('prevLevelPage').disabled,false);
 });
 
 test('mobile UX source keeps navigation touch-friendly and first-screen progress visible',()=>{
