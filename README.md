@@ -221,3 +221,13 @@ V25 reuses the advanced generator's own face occupancy Set to check an arrow can
 - Landscape layouts below 500 px viewport height can use a shorter play stage instead of the former fixed 360 px minimum.
 - V26 adds regression checks for the view controls and landscape rules. V25 fixed hashes continue to protect all 100 existing puzzles.
 - No changes to existing level generation, save format, scoring, hints, arrow geometry or the Home layout. Real-device playtesting at Levels 15, 60 and 100 remains required before merging.
+
+
+## V27 — interactive tutorial (candidate)
+
+- A separate four-step **practice cube** introduces rotation, blocked exit lanes, head-first arrow release, and the existing hint concept.
+- First-time players see the tutorial before normal Level 1. Returning players with completed levels, higher unlocks or scores are not interrupted.
+- **Skip tutorial** and **Replay interactive tutorial** controls are available; completion is recorded under a separate browser-local flag, without changing existing player saves.
+- Tutorial actions use a small independent board, `Core.getBlocker()`, `Core.availableArrows()`, and `Core.getEscapeShape()`; there are no heart penalties, scores, unlocks, or changes to production levels.
+- The tutorial is rendered with a small self-contained Canvas module. It works offline through the updated service-worker precache.
+- Existing Level 1–100 board fingerprints remain frozen from V24. Node and browser regression tests are required before merge.

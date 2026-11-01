@@ -11,10 +11,11 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="preload" href="./fonts/InstrumentSans-Regular.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="./fonts/InstrumentSerif-Regular.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="./styles.css?v=26">
-  <script defer src="./core.js?v=26"></script>
-  <script defer src="./game.js?v=26"></script>
-  <script defer src="./home-preview.js?v=26"></script>
+  <link rel="stylesheet" href="./styles.css?v=27">
+  <script defer src="./core.js?v=27"></script>
+  <script defer src="./game.js?v=27"></script>
+  <script defer src="./home-preview.js?v=27"></script>
+  <script defer src="./tutorial.js?v=27"></script>
 </head>
 <body>
   <div class="app-shell">
@@ -59,6 +60,7 @@
             <p><b>02</b> Tap an arrow with a clear exit, anywhere along its body.</p>
             <p><b>03</b> Five hearts per attempt. Hints lower your score.</p>
             <p><b>04</b> Clear the cube to earn points and unlock the next level.</p>
+            <button type="button" id="tutorialReplayHomeBtn" class="tutorial-replay-button">Replay interactive tutorial</button>
           </div>
         </div>
       </div>
@@ -167,6 +169,22 @@
   </div>
 
   <div class="modal-backdrop hidden" id="modal" role="presentation"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><button class="modal-close" id="modalClose" aria-label="Close">×</button><div id="modalIcon" class="modal-icon">✦</div><div id="modalEyebrow" class="modal-eyebrow">PUZZLE COMPLETE</div><h2 id="modalTitle">Level cleared!</h2><p id="modalMessage">Well played.</p><div id="modalStats" class="modal-stats"></div><div id="modalExtra"></div><div class="modal-buttons" id="modalButtons"></div></div></div>
+
+  <div id="tutorialOverlay" class="tutorial-overlay" role="dialog" aria-modal="true" aria-labelledby="tutorialTitle" aria-describedby="tutorialDescription" hidden>
+    <section class="tutorial-dialog">
+      <div class="tutorial-heading"><span class="section-kicker">LEARN THE PUZZLE</span><span class="tutorial-counter" id="tutorialStep">1 of 4</span></div>
+      <div class="tutorial-progress-track" aria-hidden="true"><span id="tutorialProgress"></span></div>
+      <h2 id="tutorialTitle">Rotate the cube</h2>
+      <p id="tutorialDescription">Drag the cube to explore its faces.</p>
+      <canvas id="tutorialCanvas" class="tutorial-canvas" aria-label="Practice cube with blocked and free arrows. Drag to rotate, or use the lesson button below." tabindex="0"></canvas>
+      <p class="tutorial-status" role="status" aria-live="polite" id="tutorialStatus"></p>
+      <div class="tutorial-actions">
+        <button type="button" id="tutorialSkipBtn" class="tutorial-skip">Skip tutorial</button>
+        <button type="button" id="tutorialActionBtn" class="tutorial-action">Rotate right</button>
+      </div>
+      <p class="tutorial-note">Practice only · no hearts, points or level progress affected</p>
+    </section>
+  </div>
   <script>
     if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
       window.addEventListener('load', async () => {

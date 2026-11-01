@@ -5,6 +5,7 @@ on:
     paths:
       - "core.js"
       - "game.js"
+      - "tutorial.js"
       - "sw.js"
       - "index.html"
       - "styles.css"
@@ -15,6 +16,7 @@ on:
     paths:
       - "core.js"
       - "game.js"
+      - "tutorial.js"
       - "sw.js"
       - "index.html"
       - "styles.css"

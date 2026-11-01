@@ -1,4 +1,4 @@
-name: V26 browser smoke tests
+name: V27 browser smoke tests
 on:
   pull_request:
     paths:
@@ -8,6 +8,7 @@ on:
       - "core.js"
       - "sw.js"
       - "tests/browser-smoke.cjs"
+      - "tutorial.js"
       - ".github/workflows/browser-smoke.yml"
   push:
     branches: [main]
@@ -18,6 +19,7 @@ on:
       - "core.js"
       - "sw.js"
       - "tests/browser-smoke.cjs"
+      - "tutorial.js"
       - ".github/workflows/browser-smoke.yml"
 
 jobs:

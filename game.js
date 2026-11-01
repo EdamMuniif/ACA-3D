@@ -755,6 +755,16 @@
       ['03 · Release',`Tap anywhere along a visible arrow body or arrowhead. A blocked move loses one of your ${Core.MAX_HEARTS} hearts. Hints are available.`],
       ['04 · Complete','Clear the cube to unlock the next level and score points. More arrows, higher difficulty, and remaining hearts increase score. Each hint deducts 15 points. Replaying only adds improvements over your best score.']
     ]) {const p=document.createElement('p');p.className='help-copy';const strong=document.createElement('strong');strong.textContent=title+' — ';p.append(strong,document.createTextNode(description));help.appendChild(p);}
+    if(window.ACA3DTutorial?.openReplay){
+      const replay=document.createElement('button');
+      replay.type='button';replay.className='tutorial-replay-button';
+      replay.textContent='Replay interactive tutorial';
+      replay.addEventListener('click',()=>{
+        hideModal();
+        window.ACA3DTutorial.openReplay();
+      });
+      help.appendChild(replay);
+    }
   }
 
   $('homeNavBtn').addEventListener('click',()=>showScreen('home'));
@@ -764,7 +774,15 @@
   $('nextLevelPage').addEventListener('click',()=>{levelPage++;renderLevels();});
   $('allLevelsBtn').addEventListener('click',()=>showScreen('levels'));
   $('pickLevelBtn').addEventListener('click',()=>{savePlayerName();showScreen('levels');});
-  $('playBtn').addEventListener('click',()=>{savePlayerName();startLevel(Math.min(progress.unlocked,progress.lastLevel));showScreen('play');});
+  $('playBtn').addEventListener('click',()=>{
+    savePlayerName();
+    const continueToGame=()=>{
+      startLevel(Math.min(progress.unlocked,progress.lastLevel));
+      showScreen('play');
+    };
+    if(window.ACA3DTutorial?.startIfFirstPlay?.(continueToGame))return;
+    continueToGame();
+  });
   $('saveNameBtn').addEventListener('click',savePlayerName);
   // Two compact top-right actions open one accessible home popover at a time.
   for(const name of ['profile','rules']) {
