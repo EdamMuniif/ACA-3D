@@ -75,6 +75,7 @@
   }
   function begin(isReplay,proceed){
     if(active)return;
+    active=true;
     replaying=Boolean(isReplay);onFirstDone=typeof proceed==='function'?proceed:null;
     previousFocus=document.activeElement;
     board=demo();step=0;hintShown=false;yaw=-.45;pitch=.30;
