@@ -191,7 +191,7 @@ The home page has **one** progress summary, not duplicate counters in the hero a
 ## V22 — 100 levels for friend testing
 
 - **100 progressive levels** in six tiers: Easy 1–5, Medium 6–10, Hard 11–30, Expert 31–60, Master 61–85, Legend 86–100.
-- **Levels 1–15 are unchanged** (same deterministic layout and scoring). Levels 16–100 use a new deterministic constructive generator with increasing target arrows (151 to 256), larger boards (14 to 18 cells), longer winding paths (up to 10 cells) and blocking-dependency weighting. A generated arrow is free when inserted, ensuring the board can be solved in reverse construction order.
+- **Levels 1–15 are unchanged** (same deterministic layout and scoring). Levels 16–100 use a new deterministic constructive generator with increasing target arrows (151 to 256), larger boards (15 to 18 cells), longer winding paths (up to 10 cells) and blocking-dependency weighting. A generated arrow is free when inserted, ensuring the board can be solved in reverse construction order.
 - **100-level selection** is paged 20 at a time, with six tier groups and locked/completed/best-score states. The desktop sidebar shows nearby levels and a button to open the full selector.
 - Existing save data migrates automatically; players who finished level 15 can continue on level 16 without replaying. Highest unlocked, completed count, progress percentage, and win flow now support 100 levels.
 - Tier score bonuses: Easy 25, Medium 75, Hard 150, Expert 225, Master 300, Legend 400. Replays still award only the increase over the best score.

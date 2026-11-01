@@ -147,7 +147,7 @@
     const [target,size,faces,maxLength] = legacy
       ? PROGRESSION[n-1]
       : [150+Math.floor((n-15)*1.25),
-         Math.min(18,14+Math.floor((n-16)/17)),
+         Math.min(18,15+Math.floor((n-16)/21)),
          6,
          Math.min(10,7+Math.floor((n-16)/24))];
     const tier=LEVEL_TIERS.find(t=>n>=t.start&&n<=t.end).name;
@@ -220,7 +220,12 @@
     for(let i=0;i<count;i++){
       let chosen=null,best=-Infinity;
       for(let attempt=0;attempt<maxAttempts;attempt++){
-        const cells=candidatePath(rng,size,2,maxLength);
+        const free=size*size-occupied.size,remaining=count-i;
+        // Reserve enough grid capacity for the later arrows. Without this,
+        // an early long route can strand isolated cells and prevent a full
+        // target count even though the puzzle itself remains solvable.
+        const maxCells=Math.min(maxLength,Math.max(2,Math.floor(free/remaining*.93)));
+        const cells=candidatePath(rng,size,2,maxCells);
         if(!cells||cells.some(c=>occupied.has(key(c.x,c.y))))continue;
         // Leave enough cells for the remaining arrows at minimum length 2.
         if(size*size-occupied.size-cells.length<(count-i-1)*2)continue;
@@ -277,8 +282,23 @@
     FACE_IDS.slice(0, config.faces).forEach((face, index) => {
       const count = Math.floor(config.target/config.faces) +
         (index < config.target%config.faces ? 1 : 0);
-      const factory=config.level<=LEGACY_LEVEL_COUNT?generateFace:generateAdvancedFace;
-      arrows.push(...factory(rng,config.size,count,face,config.maxLength,config.level));
+      if(config.level<=LEGACY_LEVEL_COUNT){
+        // Keep the exact original shared RNG sequence for legacy puzzles.
+        arrows.push(...generateFace(rng,config.size,count,face,config.maxLength,config.level));
+      }else{
+        let found=null;
+        // Retry difficult packing with distinct reproducible seeds instead
+        // of silently shipping levels with missing arrows.
+        for(let attempt=0;attempt<8;attempt++){
+          const seed=(0xA3C8E1 + config.level*29791 +
+            Math.imul(index+1,0x9e3779b9) + Math.imul(attempt,0x85ebca6b))>>>0;
+          const result=generateAdvancedFace(randomGenerator(seed),
+            config.size,count,face,config.maxLength,config.level);
+          if(result.length===count){found=result;break;}
+        }
+        if(!found)throw new Error(`Unable to generate level ${config.level} face ${face} at target density`);
+        arrows.push(...found);
+      }
     });
     return { ...config, arrows, total: arrows.length };
   }

@@ -26,9 +26,11 @@
       if (!parsed || typeof parsed !== 'object') return { ...base };
       const completed = Array.isArray(parsed.completed) ? parsed.completed.filter(n => Number.isInteger(n) && n >= 1 && n <= Core.LEVEL_COUNT) : [];
       const oldUnlocked=Number(parsed.unlocked)||1;
-      // Existing players who cleared former level 15 must reach level 16
-      // without replaying the old final stage.
+      const savedLast=Number(parsed.lastLevel)||1;
+      // Old saves capped progression at 15 even after clearing it.
       const migratedUnlocked=Math.max(oldUnlocked,1,...completed.map(n=>n+1));
+      const migratedLast=savedLast===15 && completed.includes(15) &&
+        oldUnlocked<=15 ? 16 : savedLast;
       const bestScores = {};
       if (parsed.bestScores && typeof parsed.bestScores === 'object' && !Array.isArray(parsed.bestScores)) {
         for(let n=1;n<=Core.LEVEL_COUNT;n++) {
@@ -39,7 +41,7 @@
       const playerName=typeof parsed.playerName === 'string' ? parsed.playerName.trim().slice(0,24) : '';
       return {
         unlocked:Math.min(Core.LEVEL_COUNT,Math.max(1,migratedUnlocked)),
-        lastLevel:Math.min(Core.LEVEL_COUNT,Math.max(1,Number(parsed.lastLevel) || 1)),
+        lastLevel:Math.min(Core.LEVEL_COUNT,Math.max(1,migratedLast)),
         completed:[...new Set(completed)],
         sound:parsed.sound !== false,
         colorful:parsed.colorful === true,
