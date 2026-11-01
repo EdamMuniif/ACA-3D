@@ -11,9 +11,10 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="preload" href="./fonts/InstrumentSans-Regular.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="./fonts/InstrumentSerif-Regular.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="./styles.css?v=22">
-  <script defer src="./core.js?v=22"></script>
-  <script defer src="./game.js?v=22"></script>
+  <link rel="stylesheet" href="./styles.css?v=23">
+  <script defer src="./core.js?v=23"></script>
+  <script defer src="./game.js?v=23"></script>
+  <script defer src="./home-preview.js?v=23"></script>
 </head>
 <body>
   <div class="app-shell">
@@ -73,10 +74,12 @@
           </div>
           <p class="home-footnote">Progress saves automatically on this device</p>
         </div>
-        <div class="hero-visual" aria-hidden="true">
-          <div class="hero-orbit orbit-one"></div><div class="hero-orbit orbit-two"></div>
-          <svg viewBox="0 0 420 380" role="presentation" class="hero-cube"><path d="M80 115 210 190 210 340 80 265Z" fill="#F1EADA" stroke="#1B1D22" stroke-width="4" stroke-linejoin="round"/><path d="M210 190 340 115 340 265 210 340Z" fill="#F7F1E4" stroke="#1B1D22" stroke-width="4" stroke-linejoin="round"/><path d="M210 40 340 115 210 190 80 115Z" fill="#FFFDF8" stroke="#1B1D22" stroke-width="4" stroke-linejoin="round"/><g stroke="#D8CFBB" stroke-width="1.2" fill="none"><path d="M106 130 L236 55 M106 100 L236 175" /><path d="M132 145 L262 70 M132 85 L262 160" /><path d="M158 160 L288 85 M158 70 L288 145" /><path d="M184 175 L314 100 M184 55 L314 130" /></g><path d="M112 254 L112 201 L142 218" fill="none" stroke="#1B1D22" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M167 233 L135 230 L148 206Z" fill="#1B1D22" stroke="#1B1D22" stroke-width="3" stroke-linejoin="round"/><path d="M184 307 L184 239" fill="none" stroke="#1B1D22" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M184 209 L198 239 L170 239Z" fill="#1B1D22" stroke="#1B1D22" stroke-width="3" stroke-linejoin="round"/><path d="M233 218 L233 284 L262 268" fill="none" stroke="#1B1D22" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M288 253 L269 280 L256 256Z" fill="#1B1D22" stroke="#1B1D22" stroke-width="3" stroke-linejoin="round"/><path d="M320 164 L320 232" fill="none" stroke="#1B1D22" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M320 261 L307 232 L334 232Z" fill="#1B1D22" stroke="#1B1D22" stroke-width="3" stroke-linejoin="round"/><path d="M213 146 L254 122 L216 100" fill="none" stroke="#1B1D22" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M190 86 L223 89 L209 112Z" fill="#1B1D22" stroke="#1B1D22" stroke-width="3" stroke-linejoin="round"/><path d="M145 122 L300 33" fill="none" stroke="#E5482D" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M328 17 L307 46 L292 20Z" fill="#E5482D" stroke="#E5482D" stroke-width="3" stroke-linejoin="round"/></svg>
-          <span class="floating-tag tag-one">↗ PLAN</span><span class="floating-tag tag-two">✦ ESCAPE</span>
+        <div class="hero-visual home-cube-stage" aria-label="Animated preview of the 3D puzzle cube">
+          <span class="home-cube-label" aria-hidden="true"><span class="live-dot"></span> CUBE IN MOTION</span>
+          <div class="hero-orbit orbit-one" aria-hidden="true"></div>
+          <div class="hero-orbit orbit-two" aria-hidden="true"></div>
+          <canvas id="homePreviewCanvas" class="home-preview-canvas" role="img" aria-label="An animated 3D cube with flat arrow paths. The cube tilts and arrows fly away in a loop."></canvas>
+          <span class="home-cube-status" aria-hidden="true">↗ ARROWS ESCAPING</span>
         </div>
       </section>
       <section class="home-bottom" aria-label="Your game progress">
@@ -112,7 +115,7 @@
         <div class="game-hud">
           <div class="level-information">
             <div class="eyebrow">CURRENT CHALLENGE <span class="mini-dash"></span> <span id="difficultyTag" class="difficulty-tag">EASY</span></div>
-            <div class="level-row"><h1 id="levelTitle">Level 01</h1><span class="level-count" id="levelFraction">01 / 15</span></div>
+            <div class="level-row"><h1 id="levelTitle">Level 01</h1><span class="level-count" id="levelFraction">01 / 100</span></div>
           </div>
           <div class="hud-right">
             <span class="player-score-line"><span id="hudPlayerName">Player</span> · <strong id="hudPoints">0</strong> pts</span>
