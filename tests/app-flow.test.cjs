@@ -53,6 +53,7 @@ function bootGame(save=null){
     focus(){document.activeElement=this}
     getBoundingClientRect(){return {width:520,height:550,left:0,top:0}}
     getContext(){return {setTransform(){}}}
+    setPointerCapture(){}
     click(){if(this.disabled)return;for(const fn of this.handlers.click||[])fn()}
   }
   const elements=new Map(ids.map(id=>[id,new Element(id)]));
@@ -187,4 +188,54 @@ test('mobile UX source keeps navigation touch-friendly and first-screen progress
   assert.match(css,/\.home-actions\s*\{display:grid;grid-template-columns:/);
   assert.match(css,/\.hero-visual\s*\{display:none\}/);
   assert.match(css,/\.game-actions \.game-button\s*\{display:flex;align-items:center;justify-content:center;min-width:0;min-height:48px/);
+});
+
+
+test('V26: focus and bounded zoom change only view state, not player progress',()=>{
+  const {elements,localStorage}=bootGame();
+  const el=id=>elements.get(id);
+  el('playBtn').click();
+  const saved=localStorage.getItem('arrow-cube-away-v1');
+  const remaining=el('remainingCount').textContent;
+  const hearts=el('hearts').getAttribute('aria-label');
+  assert.equal(el('focusFaceBtn').getAttribute('aria-pressed'),'false');
+  assert.equal(el('zoomValue').textContent,'100%');
+  assert.equal(el('zoomOutBtn').disabled,true);
+  el('zoomInBtn').click();
+  assert.equal(el('zoomValue').textContent,'110%');
+  el('zoomInBtn').click();
+  assert.equal(el('zoomValue').textContent,'120%');
+  assert.equal(el('zoomInBtn').disabled,true);
+  el('focusFaceBtn').click();
+  assert.equal(el('focusFaceBtn').getAttribute('aria-pressed'),'true');
+  assert.equal(el('focusFaceBtn').textContent,'Focus on');
+  el('focusFaceBtn').click();
+  assert.equal(el('focusFaceBtn').getAttribute('aria-pressed'),'false');
+  el('zoomOutBtn').click();
+  el('zoomOutBtn').click();
+  assert.equal(el('zoomValue').textContent,'100%');
+  assert.equal(el('zoomOutBtn').disabled,true);
+  assert.equal(localStorage.getItem('arrow-cube-away-v1'),saved);
+  assert.equal(el('remainingCount').textContent,remaining);
+  assert.equal(el('hearts').getAttribute('aria-label'),hearts);
+});
+
+test('V26: a second pointer cancels a pending first-finger action',()=>{
+  const {elements}=bootGame();
+  const el=id=>elements.get(id);
+  el('playBtn').click();
+  const canvas=el('gameCanvas');
+  const send=(name,pointerId,pointerType='touch')=>{
+    const handlers=canvas.handlers[name]||[];
+    assert.ok(handlers.length>0,name+' handler');
+    for(const handle of handlers)handle({pointerId,pointerType,button:0,clientX:100,clientY:110});
+  };
+  const remaining=el('remainingCount').textContent;
+  const hearts=el('hearts').getAttribute('aria-label');
+  send('pointerdown',1);
+  send('pointerdown',2);
+  send('pointerup',1);
+  send('pointerup',2);
+  assert.equal(el('remainingCount').textContent,remaining);
+  assert.equal(el('hearts').getAttribute('aria-label'),hearts);
 });

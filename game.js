@@ -75,6 +75,9 @@
   let sceneWidth = 0, sceneHeight = 0, sceneScale = 0;
   let audioContext = null;
   let lastTime = 0, animateUntil = 0, lastFrameKey = '';
+  // V26 controls change only the view, never puzzle geometry or saved progress.
+  let focusFaceMode = false, cameraZoom = 1;
+  const MIN_ZOOM = 1, MAX_ZOOM = 1.2, ZOOM_STEP = .1;
   let screenMode = 'home', hintsUsed = 0, lastScoreAward = 0, lastLevelScore = 0;
   const LEVEL_PAGE_SIZE = 20;
   let levelPage = 0;
@@ -438,15 +441,15 @@
     let remaining=0;
     for (const a of level.arrows) if (!a.removed) remaining++;
     const frameKey = [activeGeneration,yaw.toFixed(4),pitch.toFixed(4),sceneWidth,sceneHeight,
-      hoveredId,remaining,progress.colorful,animating].join('|');
+      hoveredId,remaining,progress.colorful,focusFaceMode,cameraZoom,animating].join('|');
     if (!animating && frameKey===lastFrameKey) return;
     lastFrameKey = frameKey;
     context.clearRect(0,0,sceneWidth,sceneHeight);
     drawCubeShadow();
     selectedPoints=[];ghostPoints=[];
-    // Far faces show through the glass as faint ghosts, so the player always knows
-    // what is behind. They are not releasable; tapping one turns that face forward.
-    for (const face of FACES) {
+    // Focus Face hides non-front surfaces and rear ghosts only in the renderer.
+    // Normal mode retains the existing glass-cube presentation and picking.
+    if (!focusFaceMode) for (const face of FACES) {
       const view=rotateVector(face.normal)[2];
       // Only retain extremely faint rear-face hints when fully back-facing.
       // Near the silhouette these project into one messy line of oversized
@@ -458,7 +461,12 @@
       context.restore();
       ghostPoints.push(...selectedPoints.splice(keep));
     }
-    for (const face of faceNormals()) {
+    const visibleFaces = faceNormals();
+    const closestFace = focusFaceMode
+      ? visibleFaces.reduce((best,face) => !best || face.view>best.view ? face : best,null)
+      : null;
+    for (const face of visibleFaces) {
+      if (focusFaceMode && face.id!==closestFace?.id) continue;
       // Always render the cube's face and grid, even when its arrows are culled.
       drawFace(face);
       const opacity=Core.faceArrowOpacity(face.view);
@@ -476,9 +484,32 @@
     const w=Math.round(sceneWidth*ratio),h=Math.round(sceneHeight*ratio);
     if (canvas.width!==w||canvas.height!==h) {canvas.width=w;canvas.height=h;}
     context.setTransform(ratio,0,0,ratio,0,0);
-    sceneScale=Core.sceneScale(sceneWidth,sceneHeight);
+    sceneScale=Core.sceneScale(sceneWidth,sceneHeight)*cameraZoom;
     // Resizing clears the canvas, including a DPR-only change that keeps the CSS size.
     lastFrameKey='';
+  }
+  function updateViewControls() {
+    $('focusFaceBtn').setAttribute('aria-pressed',String(focusFaceMode));
+    $('focusFaceBtn').textContent=focusFaceMode?'Focus on':'Focus face';
+    $('zoomValue').textContent=Math.round(cameraZoom*100)+'%';
+    $('zoomOutBtn').disabled=cameraZoom<=MIN_ZOOM;
+    $('zoomInBtn').disabled=cameraZoom>=MAX_ZOOM;
+  }
+  function setFocusFace(enabled) {
+    focusFaceMode=Boolean(enabled);
+    hoveredId=null;lastFrameKey='';
+    updateViewControls();
+    setToast(focusFaceMode?'Showing the nearest face only. Rotate to switch faces.':'Showing all cube faces.');
+  }
+  function adjustZoom(direction) {
+    const next=Math.max(MIN_ZOOM,Math.min(MAX_ZOOM,
+      Math.round((cameraZoom+direction*ZOOM_STEP)*10)/10));
+    if (next===cameraZoom)return;
+    cameraZoom=next;
+    selectedPoints=[];ghostPoints=[];
+    refreshSize();
+    updateViewControls();
+    setToast('Zoom '+Math.round(cameraZoom*100)+'%.');
   }
   function hitArrow(x,y,pointerType='touch') {
     // All projected body segments and the full arrowhead are interactive.
@@ -492,14 +523,16 @@
   canvas.addEventListener('pointerdown',event=>{
     if (modalOpen || !level) return;
     if (event.button!==0 && event.pointerType==='mouse') return;
+    // A second finger cancels the tentative tap/drag rather than changing its target.
+    if (drag) { drag=null;canvas.classList.remove('dragging');return; }
     const p=canvasCoords(event);
-    drag={x:p.x,y:p.y,lastX:p.x,lastY:p.y,moved:false,
+    drag={pointerId:event.pointerId,x:p.x,y:p.y,lastX:p.x,lastY:p.y,moved:false,
       startArrow:hitArrow(p.x,p.y,event.pointerType),pointerType:event.pointerType};
     desiredYaw=yaw;desiredPitch=pitch;hoveredId=null;
     canvas.setPointerCapture(event.pointerId);
   });
   canvas.addEventListener('pointermove',event=>{
-    if (modalOpen) return;
+    if (modalOpen || (drag && event.pointerId!==drag.pointerId)) return;
     const p=canvasCoords(event);
     if (drag) {
       const dx=p.x-drag.lastX,dy=p.y-drag.lastY;
@@ -516,7 +549,7 @@
     }
   });
   canvas.addEventListener('pointerup',event=>{
-    if (!drag) return;
+    if (!drag || event.pointerId!==drag.pointerId) return;
     const wasDrag=drag.moved;
     const press=drag;
     drag=null;
@@ -525,7 +558,13 @@
       const p=canvasCoords(event);
       // Use the closest segment on release, or the original touched segment
       // if the player's finger drifted slightly without rotating the cube.
+      const releaseArrow=hitArrow(p.x,p.y,event.pointerType);
       const arrow=press.startArrow || hitArrow(p.x,p.y,event.pointerType);
+      if (press.pointerType==='touch' && press.startArrow && releaseArrow &&
+          press.startArrow.id!==releaseArrow.id) {
+        setToast('Two arrows overlap. Try Focus face or zoom in.');
+        return; // Never charge a heart for an ambiguous finger release.
+      }
       const ghost=arrow?null:Core.pickProjectedArrow(p.x,p.y,ghostPoints,10);
       if (arrow) attemptRelease(arrow);
       else if (ghost) { turnToFace(ghost.face); setToast('Turning to the far side.'); }
@@ -536,7 +575,11 @@
       }
     }
   });
-  canvas.addEventListener('pointercancel',()=>{drag=null;canvas.classList.remove('dragging');});
+  canvas.addEventListener('pointercancel',event=>{
+    if (drag && event.pointerId===drag.pointerId) {
+      drag=null;canvas.classList.remove('dragging');
+    }
+  });
   canvas.addEventListener('pointerleave',()=>{if(!drag)hoveredId=null;});
   canvas.addEventListener('keydown',event=>{
     if (modalOpen) return;
@@ -545,6 +588,9 @@
     } else if (event.key==='ArrowUp'||event.key==='ArrowDown') {
       event.preventDefault();desiredPitch+=(event.key==='ArrowUp'?.24:-.24);
     } else if (event.key==='h'||event.key==='H') { event.preventDefault();showHint(); }
+    else if (event.key==='f'||event.key==='F') { event.preventDefault();setFocusFace(!focusFaceMode); }
+    else if (event.key==='+'||event.key==='=') { event.preventDefault();adjustZoom(1); }
+    else if (event.key==='-') { event.preventDefault();adjustZoom(-1); }
   });
   function attemptRelease(arrow) {
     // Arrows are marked removed the moment they are released, so several can
@@ -732,6 +778,9 @@
   $('rotateLeftBtn').addEventListener('click',()=>desiredYaw+=Math.PI/2*flip());
   $('rotateRightBtn').addEventListener('click',()=>desiredYaw-=Math.PI/2*flip());
   $('resetBtn').addEventListener('click',()=>{startLevel(currentLevel);setToast('Level restarted.');});
+  $('focusFaceBtn').addEventListener('click',()=>setFocusFace(!focusFaceMode));
+  $('zoomOutBtn').addEventListener('click',()=>adjustZoom(-1));
+  $('zoomInBtn').addEventListener('click',()=>adjustZoom(1));
   $('hintBtn').addEventListener('click',showHint);
   $('soundBtn').addEventListener('click',toggleSound);
   $('settingsBtn').addEventListener('click',openSettings);
@@ -749,6 +798,7 @@
   if(resizeObserver)resizeObserver.observe(stage);
   window.addEventListener('resize',refreshSize);
   startLevel(Math.min(progress.unlocked,progress.lastLevel));
+  updateViewControls();
   showScreen('home');
   requestAnimationFrame(draw);
 })();

@@ -211,3 +211,13 @@ The V23 animated cube was placed under the headline in a full-width mobile row, 
 ## V25 — stability and generator performance
 
 V25 reuses the advanced generator's own face occupancy Set to check an arrow candidate's head-exit ray. This replaces two redundant candidate calls that rebuilt an occupancy Map on every attempt; public `getBlocker()` and the actual gameplay collision rules are unchanged. Fixed V24 fingerprints verify that all **100 original level layouts** retain exactly the same arrow IDs, faces, grid paths, ordering, arrow totals and difficulty configuration. A new single-pass `tests/levels-stability.test.cjs` verifies all levels' geometry, exact counts, and a legal reverse-construction solution, with generation timings and heap/RSS diagnostics. Run `node --test tests/*.test.cjs`. The offline cache and asset references are refreshed to V25. No player save, UI, scoring, arrow rendering or level content is changed.
+
+
+## V26 — mobile readability and safer controls (candidate)
+
+- Optional **Focus face** button renders only the cube face nearest the viewer; rotating automatically switches the visible face. This is view-only and does not alter collisions, puzzles, hearts or scores.
+- Accessible zoom buttons allow **100%, 110%, or 120%** magnification, with camera and projected tap targets scaling together; zoom is limited to avoid excessive cropping.
+- Two-pointer interactions cancel a pending single-finger action. If a touch begins on one arrow but releases over another, the ambiguous tap is ignored rather than costing a heart.
+- Landscape layouts below 500 px viewport height can use a shorter play stage instead of the former fixed 360 px minimum.
+- V26 adds regression checks for the view controls and landscape rules. V25 fixed hashes continue to protect all 100 existing puzzles.
+- No changes to existing level generation, save format, scoring, hints, arrow geometry or the Home layout. Real-device playtesting at Levels 15, 60 and 100 remains required before merging.
