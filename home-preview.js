@@ -41,10 +41,32 @@
     const u=x*2/board.size-1,v=y*2/board.size-1;
     return [0,1,2].map(i=>face.normal[i]*offset+face.u[i]*u+face.v[i]*v);
   }
+  // Fit the complete rotating cube into the small side preview.
+  // The old fixed scale cropped the cube on mobile, especially at tilt.
+  let camera={scale:1,cx:0,cy:0};
+  function fitCamera(yaw,pitch){
+    let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+    for(const x of [-1.02,1.02])for(const y of [-1.02,1.02])for(const z of [-1.02,1.02]){
+      const [rx,ry,rz]=vector([x,y,z],yaw,pitch);
+      const factor=5.3/(5.3-rz);
+      const px=rx*factor,py=ry*factor;
+      minX=Math.min(minX,px);maxX=Math.max(maxX,px);
+      minY=Math.min(minY,py);maxY=Math.max(maxY,py);
+    }
+    // Safe padding prevents the linework and arrowheads clipping.
+    camera={
+      scale:Math.min(width*.89/(maxX-minX),height*.89/(maxY-minY)),
+      cx:(minX+maxX)/2,cy:(minY+maxY)/2
+    };
+  }
   function project(point,yaw,pitch){
     const [x,y,z]=vector(point,yaw,pitch);
-    const scale=Math.min(width*.37,height*.43)*5.3/(5.3-z);
-    return {x:width*.5+x*scale,y:height*.53-y*scale,z};
+    const factor=5.3/(5.3-z);
+    return {
+      x:width*.5+(x*factor-camera.cx)*camera.scale,
+      y:height*.5-(y*factor-camera.cy)*camera.scale,
+      z
+    };
   }
   function coords(face,x,y,yaw,pitch,offset){
     return project(world(face,x,y,offset),yaw,pitch);
@@ -126,6 +148,7 @@
     // Gentle oscillation keeps the front, top and right faces readable.
     const yaw=-.66+(reducedMotion?0:Math.sin(now*.00038)*.22);
     const pitch=.43+(reducedMotion?0:Math.sin(now*.00053)*.12);
+    fitCamera(yaw,pitch);
     const visible=faces.map(face=>({...face,view:vector(face.normal,yaw,pitch)[2]}))
       .filter(face=>face.view>.16).sort((a,b)=>a.view-b.view);
     for(const face of visible){
