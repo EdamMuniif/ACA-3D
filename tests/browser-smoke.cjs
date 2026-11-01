@@ -29,6 +29,9 @@ async function open(context,url){
 }
 async function play(page){
   await page.locator('#playBtn').click();
+  if(await page.locator('#tutorialOverlay').isVisible()){
+    await page.locator('#tutorialSkipBtn').click();
+  }
   await page.waitForFunction(()=>!document.getElementById('playScreen').hidden &&
     Number(document.getElementById('remainingCount').textContent)>0);
   await page.waitForTimeout(160);
@@ -63,6 +66,41 @@ async function run(){
   const url='http://127.0.0.1:'+server.address().port+'/';
   const browser=await chromium.launch({headless:true});
   try{
+    const tutorial=await browser.newContext({viewport:{width:390,height:844},
+      deviceScaleFactor:2,isMobile:true,hasTouch:true});
+    const fresh=await open(tutorial,url);
+    await fresh.page.locator('#playBtn').click();
+    assert.equal(await fresh.page.locator('#tutorialOverlay').isVisible(),true);
+    assert.equal(await fresh.page.locator('#playScreen').isVisible(),false);
+    const next=fresh.page.locator('#tutorialActionBtn');
+    for(const [index,title] of [
+      [1,'Find a blocked exit'],[2,'Release the clear arrow'],
+      [3,'Learn the hint']]){
+      await next.click();
+      assert.equal(await fresh.page.locator('#tutorialTitle').innerText(),title,
+        'tutorial progression step '+index);
+    }
+    await next.click(); // Show a valid hint
+    assert.equal(await next.innerText(),'Release highlighted arrow');
+    await next.click(); // Free the hinted arrow
+    assert.equal(await fresh.page.locator('#tutorialStep').innerText(),'Complete');
+    assert.equal(await fresh.page.locator('#tutorialSkipBtn').isVisible(),false);
+    await next.click(); // Start Level 1
+    await fresh.page.waitForFunction(()=>!document.getElementById('playScreen').hidden);
+    assert.equal(await fresh.page.locator('#hearts').getAttribute('aria-label'),'5 hearts remaining');
+    assert.equal(await fresh.page.locator('#hudPoints').innerText(),'0');
+    assert.equal(await fresh.page.evaluate(()=>localStorage.getItem('arrow-cube-away-tutorial-v27')),'true');
+    await fresh.page.locator('#homeNavBtn').click();
+    await fresh.page.locator('#rulesToggle').click();
+    await fresh.page.locator('#tutorialReplayHomeBtn').click();
+    assert.equal(await fresh.page.locator('#tutorialOverlay').isVisible(),true);
+    await fresh.page.locator('#tutorialSkipBtn').click();
+    assert.equal(await fresh.page.locator('#homeScreen').isVisible(),true);
+    assert.equal(await fresh.page.locator('#homePoints').innerText(),'0');
+    assert.deepEqual(fresh.errors,[]);
+    await tutorial.close();
+    console.log('PASS: V27 four-step tutorial, first-play launch, replay, skip, and zero score impact');
+
     const mobile=await browser.newContext({viewport:{width:390,height:844},
       deviceScaleFactor:2,isMobile:true,hasTouch:true});
     const {page,errors}=await open(mobile,url);

@@ -992,3 +992,55 @@ body.on-home .home-preview-canvas{
   }
   body.playing .stage-view-tools{top:6px;right:6px}
 }
+
+/* V27 — isolated score-free interactive tutorial. */
+.tutorial-overlay[hidden]{display:none!important}
+.tutorial-overlay{
+  position:fixed;z-index:300;inset:0;overflow-y:auto;
+  display:grid;place-items:center;padding:18px;
+  background:rgba(22,26,32,.72);overscroll-behavior:contain;
+}
+body.tutorial-active{overflow:hidden}
+.tutorial-dialog{
+  width:min(100%,620px);max-height:calc(100dvh - 36px);overflow-y:auto;
+  padding:clamp(18px,3vw,30px);border-radius:22px;
+  background:#faf6ee;color:#26292f;
+  box-shadow:0 24px 75px rgba(0,0,0,.25);
+}
+.tutorial-heading{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.tutorial-counter{font-size:11px;letter-spacing:.09em;font-weight:750}
+.tutorial-progress-track{height:5px;margin:12px 0 18px;background:#e9dfd0;border-radius:4px}
+.tutorial-progress-track span{display:block;width:0;height:100%;background:#1f7a6d;border-radius:4px;transition:width .25s}
+.tutorial-dialog h2{font-family:'Instrument Serif',serif;font-size:clamp(28px,6vw,38px);line-height:1.08;margin:4px 0 8px}
+.tutorial-dialog>p{font-size:13px;line-height:1.55;color:#565b61;margin:8px 0}
+.tutorial-canvas{
+  display:block;width:100%;height:clamp(205px,37dvh,300px);
+  margin:10px auto 6px;border-radius:16px;
+  background:radial-gradient(circle at 50% 35%,#fffdfa,#eee8dd);
+  touch-action:none;cursor:grab;
+}
+.tutorial-canvas:focus-visible,.tutorial-actions button:focus-visible,
+.tutorial-replay-button:focus-visible{outline:3px solid #1f7a6d;outline-offset:2px}
+.tutorial-status{min-height:20px;font-weight:700;color:#36594f!important}
+.tutorial-actions{display:flex;gap:10px;margin-top:12px}
+.tutorial-actions button{
+  border-radius:12px;min-height:46px;border:1px solid #bbb2a3;
+  font:750 13px/1.2 'Instrument Sans',system-ui,sans-serif;
+  padding:10px 16px;touch-action:manipulation;cursor:pointer;
+}
+.tutorial-skip{background:transparent;color:#41464d}
+.tutorial-action{background:#26292f;color:#fff;border-color:#26292f!important;flex:1}
+.tutorial-note{font-size:10px!important;color:#73736c!important;text-align:center}
+.tutorial-replay-button{
+  display:block;width:100%;margin-top:12px;padding:11px 12px;
+  border:1px solid #d4c8b3;border-radius:10px;
+  color:#26292f;background:#faf6ee;
+  font:750 12px/1.2 'Instrument Sans',system-ui,sans-serif;
+  cursor:pointer;
+}
+@media(max-height:520px) and (orientation:landscape){
+  .tutorial-overlay{display:block;padding:8px}
+  .tutorial-dialog{max-height:none;margin:auto;padding:12px}
+  .tutorial-canvas{height:155px}
+  .tutorial-dialog h2{font-size:25px}
+}
