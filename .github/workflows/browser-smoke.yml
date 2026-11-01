@@ -1,0 +1,39 @@
+name: V26 browser smoke tests
+on:
+  pull_request:
+    paths:
+      - "game.js"
+      - "index.html"
+      - "styles.css"
+      - "core.js"
+      - "sw.js"
+      - "tests/browser-smoke.cjs"
+      - ".github/workflows/browser-smoke.yml"
+  push:
+    branches: [main]
+    paths:
+      - "game.js"
+      - "index.html"
+      - "styles.css"
+      - "core.js"
+      - "sw.js"
+      - "tests/browser-smoke.cjs"
+      - ".github/workflows/browser-smoke.yml"
+
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install test-only Playwright
+        run: npm install --no-save --no-package-lock --ignore-scripts playwright@1.64.1
+      - name: Install Chromium headless shell
+        run: npx playwright install --with-deps --only-shell chromium
+      - name: Test responsive game and real touch interactions
+        run: node tests/browser-smoke.cjs
