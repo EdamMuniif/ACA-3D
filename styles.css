@@ -812,3 +812,139 @@ body.on-home .home-progress-rail{margin-top:clamp(7px,1vh,12px);height:7px}
 @media(prefers-reduced-motion:reduce){
   .home-cube-stage .hero-orbit{animation:none}
 }
+
+/* V24 — reference-sized home preview alongside the headline.
+   The V23 mobile rule placed the cube in a full-width second row, making the
+   image fill the entire hero. Keep the cube confined to a compact side slot. */
+body.on-home #homeScreen{
+  grid-template-rows:auto auto auto;
+  align-content:start;
+  gap:clamp(8px,1.25vh,13px);
+}
+body.on-home .home-hero{
+  display:grid;
+  grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr);
+  grid-template-rows:auto auto auto;
+  column-gap:clamp(10px,1.8vw,24px);
+  row-gap:0;
+  min-height:0;height:auto;
+  align-items:center;
+  padding:clamp(16px,2.7vw,33px);
+}
+body.on-home .home-hero>.home-kicker{
+  grid-column:1/-1;grid-row:1;
+  justify-self:start;
+  margin:0 0 clamp(7px,1.5vh,16px);
+}
+body.on-home .home-hero .home-copy{
+  grid-column:1;grid-row:2;
+  align-self:center;display:block;min-width:0;
+}
+body.on-home .home-hero .hero-visual{
+  grid-column:2;grid-row:2 / 4;
+  position:relative;
+  display:grid;place-items:center;
+  width:100%;height:auto;
+  max-width:270px;max-height:270px;
+  aspect-ratio:1;
+  justify-self:center;align-self:center;
+}
+body.on-home .home-hero-details{
+  grid-column:1;grid-row:3;
+  min-width:0;align-self:start;
+  padding-top:clamp(8px,1.4vh,15px);
+}
+body.on-home .home-hero-details>p:first-child{
+  color:var(--ink-2);
+  font-size:clamp(12px,1.2vw,15px);line-height:1.48;
+  margin:0 0 clamp(11px,1.7vh,19px);
+}
+body.on-home .home-hero-details .home-footnote{
+  margin:clamp(9px,1.6vh,15px) 0 0;
+  color:var(--ink-3);font-size:10px;
+}
+body.on-home .home-hero .home-actions{max-width:440px}
+body.on-home .home-hero .home-copy h1{
+  font-size:clamp(38px,5vw,70px);
+  margin:clamp(9px,1.8vh,18px) 0 0;
+}
+body.on-home .home-preview-canvas{
+  display:block;width:100%;height:100%;aspect-ratio:1;
+}
+@media(max-width:740px){
+  body.on-home .home-hero{
+    display:grid;
+    grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr);
+    grid-template-rows:auto auto auto;
+    gap:0 6px;
+    padding:clamp(15px,2.1vh,21px) clamp(12px,2.6vw,20px);
+  }
+  body.on-home .home-hero>.home-kicker{
+    grid-column:1/-1;grid-row:1;
+    font-size:9px;margin-bottom:clamp(8px,1.5vh,14px);
+  }
+  body.on-home .home-hero .home-copy{
+    grid-column:1;grid-row:2;
+    align-self:center;
+  }
+  body.on-home .home-hero .home-copy h1{
+    font-size:clamp(30px,9.4vw,46px);
+    line-height:.99;margin:8px 0 0;
+    overflow-wrap:normal;
+  }
+  body.on-home .home-hero .home-copy>.hero-greeting{
+    font-size:clamp(10px,2.9vw,13px);margin:0;
+  }
+  body.on-home .home-hero .hero-visual{
+    grid-column:2;grid-row:2;
+    display:grid;
+    width:min(100%,198px);
+    height:auto;
+    min-height:0;max-width:198px;max-height:198px;
+    aspect-ratio:1;
+    place-items:center;
+    justify-self:center;align-self:center;
+  }
+  body.on-home .home-hero-details{
+    grid-column:1/-1;grid-row:3;
+    padding-top:clamp(6px,1vh,10px);
+  }
+  body.on-home .home-hero-details>p:first-child{
+    font-size:clamp(11px,3vw,13px);line-height:1.4;
+    margin-bottom:clamp(9px,1.4vh,13px);
+  }
+  body.on-home .home-hero-details .home-footnote{
+    display:block;
+    font-size:9px;
+    margin-top:clamp(8px,1.2vh,12px);
+  }
+  body.on-home .home-hero-details .home-actions{
+    width:100%;max-width:none;
+    display:grid;grid-template-columns:minmax(0,1.18fr) minmax(0,.92fr);gap:9px;
+  }
+  body.on-home .home-hero-details .home-actions .hero-btn{
+    width:100%;min-height:44px;
+    font-size:clamp(11px,3.1vw,14px);
+  }
+}
+@media(max-width:410px){
+  body.on-home .home-hero .hero-visual{
+    width:min(100%,177px);max-width:177px;max-height:177px;
+  }
+}
+@media(max-height:670px) and (max-width:740px){
+  body.on-home .home-hero{
+    padding:10px 12px;
+  }
+  body.on-home .home-hero>.home-kicker{margin-bottom:5px}
+  body.on-home .home-hero .hero-visual{
+    width:min(100%,140px);max-width:140px;max-height:140px;
+  }
+  body.on-home .home-hero .home-copy h1{
+    font-size:clamp(27px,8vw,36px);margin-top:5px;
+  }
+  body.on-home .home-hero-details{padding-top:5px}
+  body.on-home .home-hero-details>p:first-child{margin-bottom:7px}
+  body.on-home .home-hero-details .home-actions .hero-btn{min-height:39px}
+  body.on-home .home-hero-details .home-footnote{display:none}
+}

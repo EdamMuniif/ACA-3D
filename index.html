@@ -11,10 +11,10 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="preload" href="./fonts/InstrumentSans-Regular.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="./fonts/InstrumentSerif-Regular.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="./styles.css?v=23">
-  <script defer src="./core.js?v=23"></script>
-  <script defer src="./game.js?v=23"></script>
-  <script defer src="./home-preview.js?v=23"></script>
+  <link rel="stylesheet" href="./styles.css?v=24">
+  <script defer src="./core.js?v=24"></script>
+  <script defer src="./game.js?v=24"></script>
+  <script defer src="./home-preview.js?v=24"></script>
 </head>
 <body>
   <div class="app-shell">
@@ -63,23 +63,21 @@
         </div>
       </div>
       <section class="home-hero">
+        <span class="home-kicker"><span class="home-led"></span> ARROW ESCAPE PUZZLE</span>
         <div class="home-copy">
-          <span class="home-kicker"><span class="home-led"></span> ARROW ESCAPE PUZZLE</span>
           <p class="hero-greeting">Ready, <strong id="heroPlayerName">Player</strong>?</p>
           <h1 id="homeHeading">Find the<br><span>way out.</span></h1>
+        </div>
+        <div class="hero-visual home-cube-stage">
+          <canvas id="homePreviewCanvas" class="home-preview-canvas" role="img" aria-label="Animated preview of the 3D puzzle cube with arrows flying away in a loop."></canvas>
+        </div>
+        <div class="home-hero-details">
           <p>Find a free arrow, tap to release it, and clear the cube. Can you solve all 100 levels?</p>
           <div class="home-actions">
             <button type="button" class="hero-btn hero-primary" id="playBtn"><span aria-hidden="true">▶</span> <span id="playBtnLabel">Play now</span></button>
             <button type="button" class="hero-btn hero-outline" id="pickLevelBtn">Levels <span aria-hidden="true">→</span></button>
           </div>
           <p class="home-footnote">Progress saves automatically on this device</p>
-        </div>
-        <div class="hero-visual home-cube-stage" aria-label="Animated preview of the 3D puzzle cube">
-          <span class="home-cube-label" aria-hidden="true"><span class="live-dot"></span> CUBE IN MOTION</span>
-          <div class="hero-orbit orbit-one" aria-hidden="true"></div>
-          <div class="hero-orbit orbit-two" aria-hidden="true"></div>
-          <canvas id="homePreviewCanvas" class="home-preview-canvas" role="img" aria-label="An animated 3D cube with flat arrow paths. The cube tilts and arrows fly away in a loop."></canvas>
-          <span class="home-cube-status" aria-hidden="true">↗ ARROWS ESCAPING</span>
         </div>
       </section>
       <section class="home-bottom" aria-label="Your game progress">
