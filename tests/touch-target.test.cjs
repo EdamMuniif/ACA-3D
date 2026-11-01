@@ -198,16 +198,21 @@ test('renderer keeps face geometry but culls edge-on arrows and rear-edge ghosts
     'hints should route to a face with actually visible arrows');
 });
 
-test('home screen folds player profile and how-it-works behind buttons',()=>{
+test('home uses two circular icon buttons with mutually exclusive popovers',()=>{
   const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
   const game=fs.readFileSync(path.join(__dirname,'../game.js'),'utf8');
+  const css=fs.readFileSync(path.join(__dirname,'../styles.css'),'utf8');
   for(const id of ['profile','rules']){
     assert.match(html,new RegExp(`id="${id}Toggle"[^>]*aria-expanded="false"[^>]*aria-controls="${id}Panel"`));
-    assert.match(html,new RegExp(`id="${id}Panel" hidden`),`${id} panel starts folded`);
+    assert.match(html,new RegExp(`id="${id}Panel"[^>]*hidden`),`${id} panel starts closed`);
   }
-  // The name field and greeting that game.js reads must survive the restructure.
-  for(const id of ['playerNameInput','saveNameBtn','homePlayerGreeting','homePoints','homeCompleted'])
+  for(const id of ['playerNameInput','saveNameBtn','homePlayerGreeting','homePoints','homeCompleted','homeNextLevel'])
     assert.match(html,new RegExp(`id="${id}"`));
-  assert.match(game,/\['profile','rules'\]\.forEach/);
-  assert.match(game,/aria-expanded',String\(open\)/);
+  assert.doesNotMatch(html,/class="hero-summary"/);
+  assert.match(html,/class="home-tool-actions"/);
+  assert.match(css,/\.home-tool-button\s*\{[^}]*border-radius:50%/s);
+  assert.match(css,/\.home-popover\s*\{[^}]*position:absolute/s);
+  assert.match(game,/function closeHomePanels\(\)/);
+  assert.match(game,/function toggleHomePanel\(name\)/);
+  assert.match(game,/closeHomePanels\(\);\s*if\(shouldOpen\)/);
 });

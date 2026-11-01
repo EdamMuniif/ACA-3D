@@ -111,12 +111,10 @@
     $('heroPlayerName').textContent=name;
     if(document.activeElement!==$('playerNameInput')) $('playerNameInput').value=name;
     $('homePoints').textContent=progress.points.toLocaleString();
-    $('heroPoints').textContent=progress.points.toLocaleString();
-    $('heroCurrentLevel').textContent=String(Math.min(progress.unlocked,progress.lastLevel)).padStart(2,'0');
-    $('heroWins').textContent=progress.completed.length+' / '+Core.LEVEL_COUNT;
     $('homeCompleted').textContent=progress.completed.length+' / 15';
     $('homeNextLevel').textContent=String(progress.unlocked).padStart(2,'0');
     $('homeProgressFill').style.width=(progress.completed.length/Core.LEVEL_COUNT*100)+'%';
+    $('homeProgressTrack').setAttribute('aria-valuenow',String(progress.completed.length));
     $('levelPlayerLabel').textContent=name;
     $('levelPointsLabel').textContent=progress.points.toLocaleString();
     $('levelUnlockedLabel').textContent=String(progress.unlocked);
@@ -132,9 +130,26 @@
     persist();
     updateProfileDisplays();
   }
+  function closeHomePanels() {
+    for(const name of ['profile','rules']){
+      $(name+'Toggle').setAttribute('aria-expanded','false');
+      $(name+'Panel').hidden=true;
+    }
+  }
+  function toggleHomePanel(name) {
+    const button=$(name+'Toggle');
+    const shouldOpen=button.getAttribute('aria-expanded')!=='true';
+    closeHomePanels();
+    if(shouldOpen) {
+      button.setAttribute('aria-expanded','true');
+      $(name+'Panel').hidden=false;
+      if(name==='profile')$('playerNameInput').focus();
+    }
+  }
   function showScreen(which) {
     if(!['home','levels','play'].includes(which)) return;
     screenMode=which;
+    closeHomePanels();
     $('homeScreen').hidden=which!=='home';
     $('levelsScreen').hidden=which!=='levels';
     $('playScreen').hidden=which!=='play';
@@ -675,15 +690,12 @@
   $('pickLevelBtn').addEventListener('click',()=>{savePlayerName();showScreen('levels');});
   $('playBtn').addEventListener('click',()=>{savePlayerName();startLevel(Math.min(progress.unlocked,progress.lastLevel));showScreen('play');});
   $('saveNameBtn').addEventListener('click',savePlayerName);
-  // Profile and rules stay folded on the home screen until their button is pressed.
-  ['profile','rules'].forEach(name=>{
-    const button=$(name+'Toggle');
-    button.addEventListener('click',()=>{
-      const panel=$(name+'Panel');
-      const open=button.getAttribute('aria-expanded')!=='true';
-      button.setAttribute('aria-expanded',String(open));
-      if (panel) panel.hidden=!open;
-    });
+  // Two compact top-right actions open one accessible home popover at a time.
+  for(const name of ['profile','rules']) {
+    $(name+'Toggle').addEventListener('click',()=>toggleHomePanel(name));
+  }
+  document.addEventListener('pointerdown',event=>{
+    if(screenMode==='home' && !event.target.closest?.('.home-tool-actions')) closeHomePanels();
   });
   $('playerNameInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();savePlayerName();$('playBtn').focus();}});
   $('playerNameInput').addEventListener('change',savePlayerName);
@@ -695,7 +707,13 @@
   $('settingsBtn').addEventListener('click',openSettings);
   $('modalClose').addEventListener('click',hideModal);
   $('modal').addEventListener('pointerdown',e=>{if(e.target===$('modal'))hideModal();});
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modalOpen)hideModal();});
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape' && modalOpen)hideModal();
+    else if(e.key==='Escape' && screenMode==='home'){
+      const openName=['profile','rules'].find(name=>$(name+'Toggle').getAttribute('aria-expanded')==='true');
+      if(openName){closeHomePanels();$(openName+'Toggle').focus();}
+    }
+  });
   document.body.classList.toggle('muted',!progress.sound);
   const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(refreshSize) : null;
   if(resizeObserver)resizeObserver.observe(stage);

@@ -11,9 +11,9 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="preload" href="./fonts/InstrumentSans-Regular.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="./fonts/InstrumentSerif-Regular.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="./styles.css?v=20">
-  <script defer src="./core.js?v=20"></script>
-  <script defer src="./game.js?v=20"></script>
+  <link rel="stylesheet" href="./styles.css?v=21">
+  <script defer src="./core.js?v=21"></script>
+  <script defer src="./game.js?v=21"></script>
 </head>
 <body>
   <div class="app-shell">
@@ -35,6 +35,32 @@
     </header>
 
     <main class="hub-screen" id="homeScreen" aria-labelledby="homeHeading">
+      <div class="home-top-tools">
+        <span class="home-top-label">YOUR GAME</span>
+        <div class="home-tool-actions">
+          <button type="button" class="home-tool-button" id="profileToggle" aria-label="Player profile" title="Player profile" aria-expanded="false" aria-controls="profilePanel">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.5" stroke="currentColor" stroke-width="1.8"/><path d="M5 20c.3-4.2 3-6.5 7-6.5s6.7 2.3 7 6.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </button>
+          <button type="button" class="home-tool-button" id="rulesToggle" aria-label="How it works" title="How it works" aria-expanded="false" aria-controls="rulesPanel">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M9.4 9a2.8 2.8 0 0 1 5.5.7c0 2-2.9 2.4-2.9 4.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="17.5" r="1" fill="currentColor"/></svg>
+          </button>
+          <div class="profile-card home-panel home-popover" id="profilePanel" role="region" aria-label="Player profile" hidden>
+            <div class="section-kicker">PLAYER PROFILE</div>
+            <h2>Ready, <span id="homePlayerGreeting">Player</span>?</h2>
+            <label for="playerNameInput">Your name</label>
+            <div class="name-entry"><input id="playerNameInput" maxlength="24" autocomplete="nickname" placeholder="Enter your name" value="Player"><button id="saveNameBtn" type="button">Save</button></div>
+            <p>Your name and score stay on this device.</p>
+          </div>
+          <div class="rules-card home-panel home-popover" id="rulesPanel" role="region" aria-label="How it works" hidden>
+            <div class="section-kicker">HOW IT WORKS</div>
+            <h2>Four quick rules</h2>
+            <p><b>01</b> Rotate the cube to inspect all faces.</p>
+            <p><b>02</b> Tap an arrow with a clear exit, anywhere along its body.</p>
+            <p><b>03</b> Five hearts per attempt. Hints lower your score.</p>
+            <p><b>04</b> Clear the cube to earn points and unlock the next level.</p>
+          </div>
+        </div>
+      </div>
       <section class="home-hero">
         <div class="home-copy">
           <span class="home-kicker"><span class="home-led"></span> ARROW ESCAPE PUZZLE</span>
@@ -45,11 +71,6 @@
             <button type="button" class="hero-btn hero-primary" id="playBtn"><span aria-hidden="true">▶</span> <span id="playBtnLabel">Play now</span></button>
             <button type="button" class="hero-btn hero-outline" id="pickLevelBtn">Levels <span aria-hidden="true">→</span></button>
           </div>
-          <div class="hero-summary" aria-label="Your saved progress">
-            <span>Current level <strong id="heroCurrentLevel">01</strong></span>
-            <span>Points <strong id="heroPoints">0</strong></span>
-            <span>Cleared <strong id="heroWins">0 / 15</strong></span>
-          </div>
           <p class="home-footnote">Progress saves automatically on this device</p>
         </div>
         <div class="hero-visual" aria-hidden="true">
@@ -58,7 +79,7 @@
           <span class="floating-tag tag-one">↗ PLAN</span><span class="floating-tag tag-two">✦ ESCAPE</span>
         </div>
       </section>
-      <section class="home-bottom" aria-label="Player progress and rules">
+      <section class="home-bottom" aria-label="Your game progress">
         <div class="home-stats-card">
           <div class="section-kicker">YOUR PROGRESS</div>
           <div class="home-stats-grid">
@@ -66,28 +87,7 @@
             <div><strong id="homeCompleted">0 / 15</strong><span>LEVELS CLEARED</span></div>
             <div><strong id="homeNextLevel">01</strong><span>HIGHEST UNLOCKED</span></div>
           </div>
-          <div class="home-progress-rail"><span id="homeProgressFill"></span></div>
-        </div>
-        <div class="home-fold">
-          <button type="button" class="home-toggle" id="profileToggle" aria-expanded="false" aria-controls="profilePanel"><span>Player profile</span><span class="home-toggle-mark" aria-hidden="true"></span></button>
-        <div class="profile-card home-panel" id="profilePanel" hidden>
-          <div class="section-kicker">PLAYER PROFILE</div>
-          <h2>Ready, <span id="homePlayerGreeting">Player</span>?</h2>
-          <label for="playerNameInput">Your name</label>
-          <div class="name-entry"><input id="playerNameInput" maxlength="24" autocomplete="nickname" placeholder="Enter your name" value="Player"><button id="saveNameBtn" type="button">Save</button></div>
-          <p>Your name and score stay on this device.</p>
-        </div>
-        </div>
-        <div class="home-fold">
-          <button type="button" class="home-toggle" id="rulesToggle" aria-expanded="false" aria-controls="rulesPanel"><span>How it works</span><span class="home-toggle-mark" aria-hidden="true"></span></button>
-        <div class="rules-card home-panel" id="rulesPanel" hidden>
-          <div class="section-kicker">HOW IT WORKS</div>
-          <h2>Four quick rules</h2>
-          <p><b>01</b> Rotate the cube to inspect all faces.</p>
-          <p><b>02</b> Tap only an arrow with a clear exit.</p>
-          <p><b>03</b> Five hearts per attempt. Tap anywhere on an arrow; hints lower your score.</p>
-          <p><b>04</b> Clear the cube to earn points and unlock the next level.</p>
-        </div>
+          <div class="home-progress-rail" role="progressbar" aria-label="Levels cleared" aria-valuemin="0" aria-valuemax="15" aria-valuenow="0" id="homeProgressTrack"><span id="homeProgressFill"></span></div>
         </div>
       </section>
     </main>
