@@ -1,4 +1,4 @@
-name: V27 browser smoke tests
+name: V28 browser smoke tests
 on:
   pull_request:
     paths:

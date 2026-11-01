@@ -239,3 +239,45 @@ test('V26: a second pointer cancels a pending first-finger action',()=>{
   assert.equal(el('remainingCount').textContent,remaining);
   assert.equal(el('hearts').getAttribute('aria-label'),hearts);
 });
+
+
+test('V28: practice session does not write progress and restores normal mode on exit',()=>{
+  const {elements,localStorage}=bootGame({unlocked:3,lastLevel:2,completed:[1],
+    sound:false,bestScores:{1:180},points:180});
+  const el=id=>elements.get(id);
+  el('playBtn').click();
+  const before=localStorage.getItem('arrow-cube-away-v1');
+  el('practiceToggleBtn').click();
+  assert.equal(el('practiceToggleBtn').getAttribute('aria-pressed'),'true');
+  assert.equal(el('practiceToggleBtn').textContent,'Exit practice');
+  assert.equal(el('practiceUndoBtn').hidden,false);
+  assert.equal(el('practiceUndoBtn').disabled,true);
+  assert.equal(el('practiceModeLabel').hidden,false);
+  assert.equal(el('remainingCount').textContent,'5');
+  assert.equal(localStorage.getItem('arrow-cube-away-v1'),before);
+  el('hintBtn').click();
+  assert.match(el('practiceStatus').textContent,/1 hints/);
+  assert.equal(localStorage.getItem('arrow-cube-away-v1'),before);
+  el('resetBtn').click();
+  assert.equal(el('practiceToggleBtn').getAttribute('aria-pressed'),'true');
+  assert.match(el('practiceStatus').textContent,/0 hints/);
+  assert.equal(localStorage.getItem('arrow-cube-away-v1'),before);
+  el('practiceToggleBtn').click();
+  assert.equal(el('practiceToggleBtn').getAttribute('aria-pressed'),'false');
+  assert.equal(el('practiceUndoBtn').hidden,true);
+  assert.equal(el('practiceModeLabel').hidden,true);
+  assert.equal(localStorage.getItem('arrow-cube-away-v1'),before);
+  assert.equal(el('hearts').getAttribute('aria-label'),'5 hearts remaining');
+});
+
+test('V28: leaving practice via navigation does not persist practice status',()=>{
+  const {elements,localStorage}=bootGame({unlocked:2,lastLevel:1,
+    completed:[],bestScores:{},points:0,sound:false});
+  const el=id=>elements.get(id);
+  el('playBtn').click();
+  const saved=localStorage.getItem('arrow-cube-away-v1');
+  el('practiceToggleBtn').click();
+  el('homeNavBtn').click();
+  assert.equal(el('practiceToggleBtn').getAttribute('aria-pressed'),'false');
+  assert.equal(localStorage.getItem('arrow-cube-away-v1'),saved);
+});
