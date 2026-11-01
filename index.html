@@ -11,11 +11,11 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="preload" href="./fonts/InstrumentSans-Regular.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="./fonts/InstrumentSerif-Regular.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="./styles.css?v=27">
-  <script defer src="./core.js?v=27"></script>
-  <script defer src="./game.js?v=27"></script>
-  <script defer src="./home-preview.js?v=27"></script>
-  <script defer src="./tutorial.js?v=27"></script>
+  <link rel="stylesheet" href="./styles.css?v=28">
+  <script defer src="./core.js?v=28"></script>
+  <script defer src="./game.js?v=28"></script>
+  <script defer src="./home-preview.js?v=28"></script>
+  <script defer src="./tutorial.js?v=28"></script>
 </head>
 <body>
   <div class="app-shell">
@@ -115,7 +115,7 @@
         <div class="game-hud">
           <div class="level-information">
             <div class="eyebrow">CURRENT CHALLENGE <span class="mini-dash"></span> <span id="difficultyTag" class="difficulty-tag">EASY</span></div>
-            <div class="level-row"><h1 id="levelTitle">Level 01</h1><span class="level-count" id="levelFraction">01 / 100</span></div>
+            <div class="level-row"><h1 id="levelTitle">Level 01</h1><span id="practiceModeLabel" class="practice-mode-label" hidden>PRACTICE</span><span class="level-count" id="levelFraction">01 / 100</span></div>
           </div>
           <div class="hud-right">
             <span class="player-score-line"><span id="hudPlayerName">Player</span> · <strong id="hudPoints">0</strong> pts</span>
@@ -145,6 +145,11 @@
           <button class="game-button secondary" id="rotateRightBtn" title="Rotate cube right"><span class="button-icon">↷</span> Right</button>
           <button class="game-button secondary reset-button" id="resetBtn" title="Restart this level"><span class="button-icon">⟲</span> Restart</button>
           <button class="game-button primary" id="hintBtn"><span class="button-icon">✧</span> Get Hint</button>
+        </div>
+        <div class="practice-toolbar" role="group" aria-label="Practice controls">
+          <button type="button" id="practiceToggleBtn" class="practice-toggle" aria-pressed="false" title="Practice current unlocked level without changing progress">Practice</button>
+          <button type="button" id="practiceUndoBtn" class="practice-undo" title="Undo the last practice move (3 per attempt)" hidden disabled>Undo move</button>
+          <span id="practiceStatus" class="practice-status" role="status" aria-live="polite">Practice available for unlocked levels</span>
         </div>
       </section>
 

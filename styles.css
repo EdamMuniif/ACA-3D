@@ -1044,3 +1044,30 @@ body.tutorial-active{overflow:hidden}
   .tutorial-canvas{height:155px}
   .tutorial-dialog h2{font-size:25px}
 }
+
+/* V28: practice controls are outside the cube's touch target surface. */
+.practice-toolbar{display:flex;align-items:center;gap:8px;margin-top:8px;min-height:34px}
+.practice-toolbar button{
+  min-height:34px;min-width:86px;padding:6px 11px;
+  border-radius:9px;border:1px solid #c8bead;background:#f7f3e9;
+  color:#26292f;font:750 12px/1.2 'Instrument Sans',system-ui,sans-serif;
+  touch-action:manipulation;cursor:pointer;
+}
+.practice-toolbar button[aria-pressed="true"]{background:#1f7a6d;border-color:#1f7a6d;color:white}
+.practice-toolbar button:disabled{opacity:.42;cursor:default}
+.practice-toolbar button:focus-visible{outline:2px solid #1f7a6d;outline-offset:2px}
+.practice-toolbar button[hidden]{display:none!important}
+.practice-status{font:650 10px/1.25 'Instrument Sans',system-ui,sans-serif;color:#6b6c69}
+.practice-mode-label{font:800 10px/1.2 'Instrument Sans',system-ui,sans-serif;
+  background:#1f7a6d;color:white;border-radius:6px;padding:4px 6px}
+.practice-mode-label[hidden]{display:none!important}
+@media(max-width:700px){
+  body.playing .practice-toolbar{padding:0 3px;margin-top:5px;gap:6px}
+  body.playing .practice-toolbar button{min-height:35px;min-width:78px;padding:5px 8px;font-size:11px}
+  body.playing .practice-status{font-size:9px}
+  body.playing .stage{height:calc(100dvh - 238px)}
+}
+@media(max-height:500px) and (orientation:landscape){
+  body.playing .stage{height:max(170px,calc(100dvh - 210px));min-height:170px}
+  body.playing .practice-toolbar{margin-top:3px}
+}

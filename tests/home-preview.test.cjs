@@ -12,7 +12,7 @@ const game=fs.readFileSync(path.join(__dirname,'../game.js'),'utf8');
 
 test('Home shows a responsive animated cube and no longer uses the static SVG',()=>{
   assert.match(html,/id="homePreviewCanvas"/);
-  assert.match(html,/home-preview\.js\?v=27/);
+  assert.match(html,/home-preview\.js\?v=28/);
   assert.doesNotMatch(html,/<svg[^>]*class="hero-cube"/);
   assert.match(css,/body\.on-home \.app-shell\s*\{[\s\S]*?height:100dvh/);
   assert.match(css,/body\.on-home #homeScreen\s*\{[\s\S]*?grid-template-rows:auto minmax\(0,1fr\) auto/);

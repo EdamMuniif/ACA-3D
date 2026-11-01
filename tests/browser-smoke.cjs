@@ -36,7 +36,7 @@ async function play(page){
     Number(document.getElementById('remainingCount').textContent)>0);
   await page.waitForTimeout(160);
 }
-async function stageTap(page,face,order,yaw){
+async function stageTap(page,face,order,yaw,delta=-1){
   // Coordinates reproduce production's 3D projection from game.js.
   const point=await page.evaluate(({face,order,yaw})=>{
     const board=window.ArrowCubeCore.generateLevel(1);
@@ -59,7 +59,7 @@ async function stageTap(page,face,order,yaw){
   const before=Number(await page.locator('#remainingCount').innerText());
   await page.touchscreen.tap(point.x,point.y);
   await page.waitForFunction(expected=>Number(document.getElementById('remainingCount').textContent)===expected,
-    before-1,{timeout:2500});
+    before+delta,{timeout:2500});
 }
 async function run(){
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
@@ -209,6 +209,54 @@ async function run(){
     assert.deepEqual(last.errors,[]);
     await end.close();
     console.log('PASS: level 100 loads on narrow mobile and supports focus/zoom');
+
+    // Practice must be isolated from saved scores and progression, even when
+    // blocked, hinted, undone, completed and repeated.
+    const practiceContext=await browser.newContext({viewport:{width:390,height:844},
+      deviceScaleFactor:1,isMobile:true,hasTouch:true});
+    const practice=await open(practiceContext,url);
+    await play(practice.page);
+    const saved=await practice.page.evaluate(()=>localStorage.getItem('arrow-cube-away-v1'));
+    assert.equal(await practice.page.locator('#practiceToggleBtn').getAttribute('aria-pressed'),'false');
+    await practice.page.locator('#practiceToggleBtn').click();
+    assert.equal(await practice.page.locator('#practiceToggleBtn').getAttribute('aria-pressed'),'true');
+    assert.equal(await practice.page.locator('#practiceUndoBtn').isDisabled(),true);
+    await stageTap(practice.page,'front',0,-.66,0); // blocked arrow: no heart loss
+    assert.equal(await practice.page.locator('#hearts').getAttribute('aria-label'),'5 hearts remaining');
+    assert.match(await practice.page.locator('#toast').innerText(),/Blocked by the amber arrow/);
+    await practice.page.locator('#hintBtn').click();
+    assert.match(await practice.page.locator('#practiceStatus').innerText(),/1 hints/);
+    await stageTap(practice.page,'front',2,-.66);
+    await practice.page.waitForTimeout(1100);
+    assert.equal(await practice.page.locator('#practiceUndoBtn').isEnabled(),true);
+    await practice.page.locator('#practiceUndoBtn').click();
+    assert.equal(await practice.page.locator('#remainingCount').innerText(),'5');
+    assert.match(await practice.page.locator('#practiceStatus').innerText(),/2 undos left/);
+    await stageTap(practice.page,'front',2,-.66);
+    await practice.page.locator('#rotateRightBtn').click();
+    await practice.page.waitForTimeout(870);
+    await stageTap(practice.page,'right',1,-.66-Math.PI/2);
+    await stageTap(practice.page,'right',0,-.66-Math.PI/2);
+    await practice.page.locator('#rotateLeftBtn').click();
+    await practice.page.waitForTimeout(870);
+    await stageTap(practice.page,'front',1,-.66);
+    await stageTap(practice.page,'front',0,-.66);
+    await practice.page.locator('#modalTitle').getByText('Practice cleared!').waitFor({timeout:4500});
+    assert.equal(await practice.page.evaluate(()=>localStorage.getItem('arrow-cube-away-v1')),saved);
+    assert.equal(await practice.page.locator('#hudPoints').innerText(),'0');
+    assert.equal(await practice.page.locator('#homeCompleted').innerText(),'0 / 100');
+    await practice.page.locator('#modalButtons').getByText('Undo last move').click();
+    assert.equal(await practice.page.locator('#remainingCount').innerText(),'1');
+    await stageTap(practice.page,'front',0,-.66);
+    await practice.page.locator('#modalTitle').getByText('Practice cleared!').waitFor({timeout:4500});
+    await practice.page.locator('#modalButtons').getByText('Normal play').click();
+    assert.equal(await practice.page.locator('#practiceToggleBtn').getAttribute('aria-pressed'),'false');
+    assert.equal(await practice.page.locator('#practiceUndoBtn').isVisible(),false);
+    assert.equal(await practice.page.locator('#remainingCount').innerText(),'5');
+    assert.equal(await practice.page.evaluate(()=>localStorage.getItem('arrow-cube-away-v1')),saved);
+    assert.deepEqual(practice.errors,[]);
+    await practiceContext.close();
+    console.log('PASS: V28 practice blocked tap, hint, capped undo, completion and save isolation');
 
     const solve=await browser.newContext({viewport:{width:390,height:844},
       isMobile:true,deviceScaleFactor:1,hasTouch:true});

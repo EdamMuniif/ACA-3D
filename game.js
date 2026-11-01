@@ -79,6 +79,10 @@
   let focusFaceMode = false, cameraZoom = 1;
   const MIN_ZOOM = 1, MAX_ZOOM = 1.2, ZOOM_STEP = .1;
   let screenMode = 'home', hintsUsed = 0, lastScoreAward = 0, lastLevelScore = 0;
+  // V28 practice is transient; no practice data is written to the player save.
+  const PRACTICE_UNDO_LIMIT = 3;
+  let practiceMode = false, practiceHistory = [], practiceUndoUsed = 0;
+  let practiceHints = 0, practiceBlockedChecks = 0;
   const LEVEL_PAGE_SIZE = 20;
   let levelPage = 0;
 
@@ -159,6 +163,10 @@
   }
   function showScreen(which) {
     if(!['home','levels','play'].includes(which)) return;
+    if(which!=='play' && practiceMode){
+      practiceMode=false;practiceHistory=[];escaping.clear();
+      updatePracticeUI();
+    }
     screenMode=which;
     closeHomePanels();
     $('homeScreen').hidden=which!=='home';
@@ -178,6 +186,7 @@
   }
 
   function updateHUD() {
+    $('practiceModeLabel').hidden=!practiceMode;
     $('levelTitle').innerHTML = `<em>Level</em> <span class="num">${String(currentLevel).padStart(2,'0')}</span>`;
     $('levelFraction').textContent = `${String(currentLevel).padStart(2,'0')} / ${Core.LEVEL_COUNT}`;
     $('difficultyTag').textContent = level.tier.toUpperCase();
@@ -191,7 +200,9 @@
     $('progressTrack').setAttribute('aria-valuenow',String(percent));
     $('statSolved').textContent = String(progress.completed.length).padStart(2,'0');
     updateProfileDisplays();
-    $('stageNote').textContent = remaining === 0 ? 'ALL ARROWS CLEARED' : 'ROTATE · FOLLOW THE ARROWHEAD · FIND A CLEAR EXIT';
+    $('stageNote').textContent = remaining === 0 ? 'ALL ARROWS CLEARED' :
+      practiceMode?'PRACTICE · CLEAR THE EXIT · NO HEART PENALTIES' :
+      'ROTATE · FOLLOW THE ARROWHEAD · FIND A CLEAR EXIT';
   }
 
   function levelButton(n,compact=false) {
@@ -249,19 +260,23 @@
       nearby.appendChild(levelButton(n,true));
   }
 
-  function startLevel(index) {
+  function startLevel(index,{practice=false}={}) {
     activeGeneration++;
     escaping.clear();
     currentLevel = Math.min(Core.LEVEL_COUNT,Math.max(1,index));
-    progress.lastLevel = currentLevel;
-    persist();
+    practiceMode=Boolean(practice);
+    practiceHistory=[];practiceUndoUsed=0;practiceHints=0;practiceBlockedChecks=0;
+    if (!practiceMode) {
+      progress.lastLevel = currentLevel;
+      persist();
+    }
     level = Core.generateLevel(currentLevel);
     hearts = Core.MAX_HEARTS; hintsUsed = 0; lastScoreAward = 0; lastLevelScore = 0;
     hoveredId = null; hintedId = null; blockFeedback = null;
     yaw = -.66; pitch = .43; desiredYaw = yaw; desiredPitch = pitch;
     $('toast').classList.remove('visible');
     hideModal();
-    updateHUD(); renderLevels();
+    updateHUD(); renderLevels();updatePracticeUI();
     if(screenMode==='play') canvas.focus({ preventScroll:true });
   }
 
@@ -420,7 +435,10 @@
         if (time-arrow.escape.startedAt >= arrow.escape.duration) { arrow.escape = null; escaping.delete(arrow); }
       }
       // Win only once the last arrow has visibly left the cube.
-      if (!escaping.size && level.arrows.every(a=>a.removed)) finishLevel();
+      if (!escaping.size) {
+        updatePracticeUI();
+        if (level.arrows.every(a=>a.removed)) finishLevel();
+      }
     }
     if (!drag) {
       const difference=desiredYaw-yaw;
@@ -592,6 +610,40 @@
     else if (event.key==='+'||event.key==='=') { event.preventDefault();adjustZoom(1); }
     else if (event.key==='-') { event.preventDefault();adjustZoom(-1); }
   });
+  function updatePracticeUI(){
+    $('practiceToggleBtn').textContent=practiceMode?'Exit practice':'Practice';
+    $('practiceToggleBtn').setAttribute('aria-pressed',String(practiceMode));
+    $('practiceUndoBtn').hidden=!practiceMode;
+    $('practiceUndoBtn').disabled=!practiceMode || !practiceHistory.length ||
+      practiceUndoUsed>=PRACTICE_UNDO_LIMIT || escaping.size>0;
+    $('practiceStatus').textContent=practiceMode
+      ? 'PRACTICE · '+Math.max(0,PRACTICE_UNDO_LIMIT-practiceUndoUsed)+
+        ' undos left · '+practiceHints+' hints'
+      : 'Practice available for unlocked levels';
+    document.body.classList.toggle('practice-active',practiceMode);
+  }
+  function enterPractice(){
+    if (currentLevel>progress.unlocked || modalOpen) return;
+    startLevel(currentLevel,{practice:true});
+    setToast('Practice mode: no hearts or points affected. Your current attempt was restarted.','success');
+  }
+  function exitPractice(){
+    if(!practiceMode)return;
+    startLevel(currentLevel);
+    setToast('Normal scoring restored. Level restarted.');
+  }
+  function undoPracticeMove(){
+    if(!practiceMode || practiceUndoUsed>=PRACTICE_UNDO_LIMIT || escaping.size ||
+        !practiceHistory.length)return;
+    const arrow=practiceHistory.pop();
+    arrow.removed=false;
+    arrow.escape=null;
+    practiceUndoUsed++;
+    hoveredId=null;hintedId=null;blockFeedback=null;
+    lastFrameKey='';
+    updateHUD();updatePracticeUI();
+    setToast('Last arrow restored. '+(PRACTICE_UNDO_LIMIT-practiceUndoUsed)+' undos remaining.','success');
+  }
   function attemptRelease(arrow) {
     // Arrows are marked removed the moment they are released, so several can
     // glide out together without affecting what blocks what.
@@ -602,13 +654,16 @@
       // A second tap on an arrow that is still flashing red and still blocked is the
       // same mistake, not a new one. Once the blocker is gone the tap is a real release.
       if ((arrow.badUntil||0)>stamp) return;
-      hearts--;
+      if (practiceMode) practiceBlockedChecks++;
+      else hearts--;
       arrow.badUntil=stamp+680;
       blockFeedback={arrowId:arrow.id,blockerId:blocker.id,cell:blocker.cell,until:stamp+1700};
       animateUntil=stamp+1750;
       playSound('bad');
       updateHUD();
-      if (hearts===0) {
+      if (practiceMode){
+        setToast('Blocked by the amber arrow. Clear its exit lane first; no heart lost.','warning');
+      } else if (hearts===0) {
         setToast('No hearts left. Try again.','warning');
         const generation=activeGeneration;
         setTimeout(()=>{if(generation===activeGeneration && screenMode==='play') showLossModal();},550);
@@ -621,11 +676,16 @@
     arrow.escape={startedAt:stamp,distance:shape.totalTravel,
       duration:reducedMotion ? 200 : Math.min(950,Math.max(560,360+shape.totalTravel*55))};
     escaping.add(arrow);
+    if (practiceMode) practiceHistory.push(arrow);
     hintedId=null;hoveredId=null;blockFeedback=null;
     playSound('good');
-    updateHUD();
+    updateHUD();updatePracticeUI();
   }
   function finishLevel() {
+    if(practiceMode){
+      showPracticeSummary();
+      return; // No bestScores, points, completed, unlocked or persist().
+    }
     lastLevelScore=Core.calculateLevelScore({arrows:level.total,hearts,tier:level.tier,hints:hintsUsed});
     const outcome=Core.getScoreAward(progress.bestScores[currentLevel]||0,lastLevelScore);
     lastScoreAward=outcome.awarded;
@@ -662,10 +722,15 @@
       turnToFace(picked.face);
       setToast('Rotating to reveal a free arrow.','success');
     } else setToast('Highlighted arrow has a clear exit!','success');
-    hintsUsed++;
+    if(practiceMode) practiceHints++;
+    else hintsUsed++;
     hintedId=picked.id;
     hintExpiry=performance.now()+5200;
+    setToast(practiceMode
+      ? 'Green arrow: its exit lane is clear. Tap to release it — no score penalty.'
+      : 'Green arrow: its exit lane is clear. Tap to release it (15-point hint cost).','success');
     playSound('hint');
+    updatePracticeUI();
   }
 
   function hideModal() {
@@ -690,6 +755,20 @@
     }
     $('modal').classList.remove('hidden');
     $('modalClose').focus({preventScroll:true});
+  }
+  function showPracticeSummary(){
+    openModal({icon:'✓',eyebrow:'PRACTICE COMPLETE',title:'Practice cleared!',
+      message:'All arrows escaped. Practice does not change scores, unlocked levels or saved progress.',
+      stats:`<span>✓ ${level.total} ARROWS</span><span>✧ ${practiceHints} HINTS</span><span>↺ ${practiceUndoUsed} UNDOS</span>`,
+      buttons:[
+        {text:'Undo last move',action:()=>{
+          hideModal();undoPracticeMove();
+        }},
+        {text:'Try again',action:()=>startLevel(currentLevel,{practice:true})},
+        {text:'Normal play',primary:true,action:exitPractice}
+      ]});
+    const undoButton=$('modalButtons').children[0];
+    undoButton.disabled=!practiceHistory.length || practiceUndoUsed>=PRACTICE_UNDO_LIMIT;
   }
   function showWinModal() {
     playSound('win');
@@ -795,7 +874,11 @@
   $('playerNameInput').addEventListener('change',savePlayerName);
   $('rotateLeftBtn').addEventListener('click',()=>desiredYaw+=Math.PI/2*flip());
   $('rotateRightBtn').addEventListener('click',()=>desiredYaw-=Math.PI/2*flip());
-  $('resetBtn').addEventListener('click',()=>{startLevel(currentLevel);setToast('Level restarted.');});
+  $('resetBtn').addEventListener('click',()=>{
+    startLevel(currentLevel,{practice:practiceMode});setToast('Level restarted.');
+  });
+  $('practiceToggleBtn').addEventListener('click',()=>practiceMode?exitPractice():enterPractice());
+  $('practiceUndoBtn').addEventListener('click',undoPracticeMove);
   $('focusFaceBtn').addEventListener('click',()=>setFocusFace(!focusFaceMode));
   $('zoomOutBtn').addEventListener('click',()=>adjustZoom(-1));
   $('zoomInBtn').addEventListener('click',()=>adjustZoom(1));

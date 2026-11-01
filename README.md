@@ -231,3 +231,13 @@ V25 reuses the advanced generator's own face occupancy Set to check an arrow can
 - Tutorial actions use a small independent board, `Core.getBlocker()`, `Core.availableArrows()`, and `Core.getEscapeShape()`; there are no heart penalties, scores, unlocks, or changes to production levels.
 - The tutorial is rendered with a small self-contained Canvas module. It works offline through the updated service-worker precache.
 - Existing Level 1–100 board fingerprints remain frozen from V24. Node and browser regression tests are required before merge.
+
+
+## V28 — Practice mode and player recovery (candidate)
+
+- Practice is available for **already unlocked levels**, launched from the gameplay toolbar. It runs the exact original deterministic board in a transient session, not in saved progress.
+- Wrong/blocked practice taps highlight the responsible blocker and do **not** consume hearts. Hints identify a clear-exit arrow without changing normal score penalties. Practice exposes **three undo actions per attempt**, available only after a successful release animation finishes.
+- Undo restores the last arrow to its original board position and restores the exact dynamic blocker relationships. A practice-completion summary offers retry, normal play and (if available) undo.
+- Practice level completion never calls normal best-score, points, unlock or save persistence. Ending practice restarts the original level in normal scoring mode.
+- Normal mode is kept unchanged: five hearts, existing scoring, best-score upgrades and hint deductions. Existing 100-level fingerprints and save migration regressions remain mandatory.
+- V28 adds Node and Chromium tests for practice entry/exit, undo, blocked feedback, hints, summary, saved progress isolation, and responsive controls.
