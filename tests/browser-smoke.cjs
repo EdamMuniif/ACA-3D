@@ -101,6 +101,54 @@ async function run(){
     await tutorial.close();
     console.log('PASS: V27 four-step tutorial, first-play launch, replay, skip, and zero score impact');
 
+    // Verify that the tutorial Canvas also accepts physical-style drag/touch
+    // interactions, rather than functioning as a button-only slideshow.
+    const touchLesson=await browser.newContext({viewport:{width:390,height:844},
+      deviceScaleFactor:1,isMobile:true,hasTouch:true});
+    const direct=await open(touchLesson,url);
+    await direct.page.locator('#playBtn').click();
+    const box=await direct.page.locator('#tutorialCanvas').boundingBox();
+    const cx=box.x+box.width*.5,cy=box.y+box.height*.5;
+    await direct.page.mouse.move(cx-35,cy);
+    await direct.page.mouse.down();
+    await direct.page.mouse.move(cx+42,cy,{steps:7});
+    await direct.page.mouse.up();
+    assert.equal(await direct.page.locator('#tutorialStep').innerText(),'2 of 4');
+    await direct.page.waitForTimeout(760); // tutorial's return-to-front animation
+    async function tapDemoArrow(x,y){
+      const pos=await direct.page.evaluate(({x,y})=>{
+        const canvas=document.getElementById('tutorialCanvas');
+        const rect=canvas.getBoundingClientRect();
+        const yaw=-.45,pitch=.30;
+        const a=2*x/4-1,b=2*y/4-1;
+        const px=a,py=-b,pz=1.02;
+        const cy=Math.cos(yaw),sy=Math.sin(yaw);
+        const cp=Math.cos(pitch),sp=Math.sin(pitch);
+        const rx=px*cy+pz*sy,z=-px*sy+pz*cy;
+        const ry=py*cp-z*sp,rz=py*sp+z*cp;
+        const scale=Math.min(rect.width*.30,rect.height*.36,135)*4.7/(4.7-rz);
+        return {x:rect.left+rect.width*.5+rx*scale,
+          y:rect.top+rect.height*.51-ry*scale};
+      },{x,y});
+      await direct.page.touchscreen.tap(pos.x,pos.y);
+    }
+    await tapDemoArrow(1,1.5);
+    assert.equal(await direct.page.locator('#tutorialStep').innerText(),'3 of 4');
+    await tapDemoArrow(2.5,1);
+    assert.equal(await direct.page.locator('#tutorialStep').innerText(),'4 of 4');
+    await direct.page.locator('#tutorialActionBtn').click(); // Hint
+    assert.equal(await direct.page.locator('#tutorialActionBtn').innerText(),
+      'Release highlighted arrow');
+    await tapDemoArrow(1,1.5);
+    assert.equal(await direct.page.locator('#tutorialStep').innerText(),'Complete');
+    await direct.page.locator('#tutorialActionBtn').click();
+    assert.equal(await direct.page.locator('#playScreen').isVisible(),true);
+    assert.equal(await direct.page.locator('#hearts').getAttribute('aria-label'),
+      '5 hearts remaining');
+    assert.deepEqual(direct.errors,[]);
+    await touchLesson.close();
+    console.log('PASS: tutorial cube drag and arrow touch selection are functional');
+
     const mobile=await browser.newContext({viewport:{width:390,height:844},
       deviceScaleFactor:2,isMobile:true,hasTouch:true});
     const {page,errors}=await open(mobile,url);
