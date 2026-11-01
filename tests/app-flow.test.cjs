@@ -253,7 +253,7 @@ test('V28: practice session does not write progress and restores normal mode on 
   assert.equal(el('practiceUndoBtn').hidden,false);
   assert.equal(el('practiceUndoBtn').disabled,true);
   assert.equal(el('practiceModeLabel').hidden,false);
-  assert.equal(el('remainingCount').textContent,'5');
+  assert.equal(Number(el('remainingCount').textContent),Core.getLevelConfig(2).target);
   assert.equal(localStorage.getItem('arrow-cube-away-v1'),before);
   el('hintBtn').click();
   assert.match(el('practiceStatus').textContent,/1 hints/);

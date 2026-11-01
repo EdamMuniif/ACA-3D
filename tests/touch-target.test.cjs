@@ -134,9 +134,10 @@ test('several arrows may escape at once and a repeat tap on a blocked arrow is f
   assert.doesNotMatch(js,/activeEscape/,'single-escape lock must not return');
   assert.match(js,/const escaping = new Set\(\)/);
   // The win modal waits until the last escaping arrow has left the cube.
-  assert.match(js,/!escaping\.size && level\.arrows\.every\(a=>a\.removed\)\) finishLevel\(\)/);
+  assert.match(js,/if \(!escaping\.size\) \{[\s\S]*?level\.arrows\.every\(a=>a\.removed\)\) finishLevel\(\)/);
   // A second tap while the arrow is still flashing red must not cost another heart.
-  assert.match(js,/if \(blocker\) \{[^}]*?if \(\(arrow\.badUntil\|\|0\)>stamp\) return;\s*hearts--;/s);
+  assert.match(js,/if \(blocker\) \{[\s\S]*?if \(\(arrow\.badUntil\|\|0\)>stamp\) return;/);
+  assert.match(js,/if \(practiceMode\) practiceBlockedChecks\+\+;\s*else hearts--;/);
 });
 
 test('rendering skips unchanged frames and avoids per-frame blur shadows',()=>{

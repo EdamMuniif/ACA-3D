@@ -33,7 +33,7 @@ test('V28: only practice branch skips the normal score/unlock and save workflow'
   assert.match(game,/practiceHistory\.push\(arrow\)/);
   assert.match(game,/practiceHistory\.pop\(\)/);
   assert.match(game,/if\(!practiceMode \|\| practiceUndoUsed>=PRACTICE_UNDO_LIMIT \|\| escaping\.size/);
-  assert.match(game,/if\(practiceMode\)\{\s*showPracticeSummary\(\);\s*return;\/\/ No bestScores/);
+  assert.match(game,/if\(practiceMode\)\{\s*showPracticeSummary\(\);\s*return;[^\n]*No bestScores/);
   assert.match(game,/if \(!practiceMode\) \{\s*progress\.lastLevel = currentLevel;\s*persist\(\);/);
   assert.match(game,/if \(practiceMode\) practiceBlockedChecks\+\+;\s*else hearts--;/);
   assert.match(game,/if\(practiceMode\) practiceHints\+\+;\s*else hintsUsed\+\+;/);
