@@ -7,7 +7,7 @@ const code = fs.readFileSync(path.join(__dirname, '../sw.js'), 'utf8');
 
 function makeWorker(offline=false) {
   const handlers = {}, saved = new Map();
-  const request = {url:'https://example.test/ACA-3D/game.js?v=24',method:'GET',mode:'same-origin'};
+  const request = {url:'https://example.test/ACA-3D/game.js?v=25',method:'GET',mode:'same-origin'};
   const response = body => ({ok:true,body,clone(){return response(body)}});
   const cache = {
     async put(req,r){saved.set(req.url,r)},

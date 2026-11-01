@@ -209,6 +209,19 @@
     const arrows=[],occupied=new Set(),exitRays=new Map();
     const maxAttempts=Math.min(115,45+Math.floor((level-16)*.70));
     const weight=4+Math.min(3,(level-16)/28);
+    // A candidate moves head-first along its final direction. The current
+    // face's occupied Set already represents exactly the other arrows here;
+    // unlike getBlocker(), this does not rebuild an occupancy Map per trial.
+    function candidateExitBlocked(cells) {
+      const tip=cells[cells.length-1],prev=cells[cells.length-2];
+      const dx=tip.x-prev.x,dy=tip.y-prev.y;
+      for(let step=1;step<=size;step++){
+        const x=tip.x+dx*step,y=tip.y+dy*step;
+        if(!inGrid(x,y,size))break;
+        if(occupied.has(key(x,y)))return true;
+      }
+      return false;
+    }
     function impactScore(cells) {
       const blocked=new Set();
       for(const c of cells) {
@@ -230,7 +243,7 @@
         // Leave enough cells for the remaining arrows at minimum length 2.
         if(size*size-occupied.size-cells.length<(count-i-1)*2)continue;
         const trial={id:face+'-'+i,face,cells,removed:false};
-        if(isBlocked(trial,arrows,size))continue;
+        if(candidateExitBlocked(cells))continue;
         let bends=0;
         for(let j=2;j<cells.length;j++){
           const a=cells[j-2],b=cells[j-1],c=cells[j];
@@ -250,7 +263,7 @@
             const nx=x+d.x,ny=y+d.y;
             if(!inGrid(nx,ny,size)||occupied.has(key(nx,ny)))continue;
             const trial={id:face+'-'+i,face,cells:[{x,y},{x:nx,y:ny}],removed:false};
-            if(!isBlocked(trial,arrows,size))candidates.push(trial);
+            if(!candidateExitBlocked(trial.cells))candidates.push(trial);
           }
         }
         if(candidates.length){
