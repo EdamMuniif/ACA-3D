@@ -646,3 +646,35 @@ button:focus-visible,canvas:focus-visible,.name-entry input:focus-visible { outl
   .home-bottom .home-stats-grid span{font-size:8px;line-height:1.3}
   .home-bottom .home-progress-rail{margin-top:13px}
 }
+
+/* V22 — 100-level navigation, five lightweight paged sets. */
+.level-pager{
+  display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  align-items:center;gap:10px;margin:22px 0 18px
+}
+.level-pager button,.all-levels-button{
+  min-height:44px;border:1px solid var(--rule);border-radius:12px;
+  background:var(--card);color:var(--ink);padding:0 16px;
+  font:inherit;font-size:12px;font-weight:750;cursor:pointer
+}
+.level-pager button:first-child{justify-self:start}
+.level-pager button:last-child{justify-self:end}
+.level-pager button:hover:not(:disabled),.all-levels-button:hover{border-color:var(--ink);background:var(--paper)}
+.level-pager button:disabled{opacity:.4;cursor:not-allowed}
+#levelPageLabel{color:var(--ink-2);font-size:12px;font-weight:800;text-align:center;white-space:nowrap}
+.level-sections{display:grid;gap:14px}
+.level-sections .level-hub-group{margin:0}
+.level-group-dot.expert{background:#527c9a}
+.level-group-dot.master{background:#8c65a2}
+.level-group-dot.legend{background:#aa7e2e}
+.difficulty-tag.expert{color:#527c9a}
+.difficulty-tag.master{color:#8c65a2}
+.difficulty-tag.legend{color:#aa7e2e}
+.level-nearby-label{margin:12px 0 10px;color:var(--ink-3);letter-spacing:.13em;text-transform:uppercase;font-size:10px;font-weight:800}
+.all-levels-button{width:100%;margin-top:14px;text-align:center}
+@media(max-width:700px){
+  .level-pager{gap:6px;margin:15px 0 12px}
+  .level-pager button{padding:0 10px;font-size:11px}
+  #levelPageLabel{font-size:10px}
+  .level-sections{gap:12px}
+}

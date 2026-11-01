@@ -7,7 +7,16 @@
   'use strict';
 
   const FACE_IDS = ['front', 'right', 'top', 'left', 'back', 'bottom'];
-  const LEVEL_COUNT = 15;
+  const LEVEL_COUNT = 100;
+  const LEGACY_LEVEL_COUNT = 15;
+  const LEVEL_TIERS = Object.freeze([
+    {name:'Easy',start:1,end:5},
+    {name:'Medium',start:6,end:10},
+    {name:'Hard',start:11,end:30},
+    {name:'Expert',start:31,end:60},
+    {name:'Master',start:61,end:85},
+    {name:'Legend',start:86,end:100}
+  ]);
   const MAX_HEARTS = 5;
 
   function randomGenerator(seed) {
@@ -131,9 +140,18 @@
   ];
   function getLevelConfig(level) {
     const n = Math.min(LEVEL_COUNT, Math.max(1, Math.floor(level) || 1));
-    const [target,size,faces,maxLength] = PROGRESSION[n-1];
-    const tier = n <= 5 ? 'Easy' : n <= 10 ? 'Medium' : 'Hard';
-    return { level:n, tier, size, faces, maxLength, target, perFace:Math.ceil(target/faces) };
+    // The first 15 seeded puzzles and their scores are deliberately frozen.
+    // From level 16 onward: more arrows, longer routes, and more potential
+    // blockers. Max grid size is bounded for phone rendering performance.
+    const legacy=n<=LEGACY_LEVEL_COUNT;
+    const [target,size,faces,maxLength] = legacy
+      ? PROGRESSION[n-1]
+      : [150+Math.floor((n-15)*1.25),
+         Math.min(18,15+Math.floor((n-16)/21)),
+         6,
+         Math.min(10,7+Math.floor((n-16)/24))];
+    const tier=LEVEL_TIERS.find(t=>n>=t.start&&n<=t.end).name;
+    return {level:n,tier,size,faces,maxLength,target,perFace:Math.ceil(target/faces)};
   }
 
   function generateFace(rng, size, count, face, maxLength, level) {
@@ -183,6 +201,80 @@
     return arrows;
   }
 
+  // Higher levels use a faster constructive generator, not longer searches
+  // through the original expensive candidate scoring. Every new arrow's
+  // head has a free exit WHEN INSERTED; removing in reverse insertion order
+  // is therefore always a valid solution, even with complex block chains.
+  function generateAdvancedFace(rng,size,count,face,maxLength,level) {
+    const arrows=[],occupied=new Set(),exitRays=new Map();
+    const maxAttempts=Math.min(115,45+Math.floor((level-16)*.70));
+    const weight=4+Math.min(3,(level-16)/28);
+    function impactScore(cells) {
+      const blocked=new Set();
+      for(const c of cells) {
+        const hit=exitRays.get(key(c.x,c.y));
+        if(hit)for(const id of hit)blocked.add(id);
+      }
+      return blocked.size;
+    }
+    for(let i=0;i<count;i++){
+      let chosen=null,best=-Infinity;
+      for(let attempt=0;attempt<maxAttempts;attempt++){
+        const free=size*size-occupied.size,remaining=count-i;
+        // Reserve enough grid capacity for the later arrows. Without this,
+        // an early long route can strand isolated cells and prevent a full
+        // target count even though the puzzle itself remains solvable.
+        const maxCells=Math.min(maxLength,Math.max(2,Math.floor(free/remaining*.93)));
+        const cells=candidatePath(rng,size,2,maxCells);
+        if(!cells||cells.some(c=>occupied.has(key(c.x,c.y))))continue;
+        // Leave enough cells for the remaining arrows at minimum length 2.
+        if(size*size-occupied.size-cells.length<(count-i-1)*2)continue;
+        const trial={id:face+'-'+i,face,cells,removed:false};
+        if(isBlocked(trial,arrows,size))continue;
+        let bends=0;
+        for(let j=2;j<cells.length;j++){
+          const a=cells[j-2],b=cells[j-1],c=cells[j];
+          if(b.x-a.x!==c.x-b.x || b.y-a.y!==c.y-b.y)bends++;
+        }
+        const score=impactScore(cells)*weight +
+          bends*(.35+Math.min(.4,(level-16)/180)) +
+          cells.length*.08+rng()*.45;
+        if(score>best){best=score;chosen=trial;}
+        if(attempt>22 && best>=weight*2+bends*.30)break;
+      }
+      if(!chosen){
+        const candidates=[];
+        for(let y=0;y<size;y++)for(let x=0;x<size;x++){
+          if(occupied.has(key(x,y)))continue;
+          for(const d of [{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}]){
+            const nx=x+d.x,ny=y+d.y;
+            if(!inGrid(nx,ny,size)||occupied.has(key(nx,ny)))continue;
+            const trial={id:face+'-'+i,face,cells:[{x,y},{x:nx,y:ny}],removed:false};
+            if(!isBlocked(trial,arrows,size))candidates.push(trial);
+          }
+        }
+        if(candidates.length){
+          // Prefer a new piece which blocks something already on the board.
+          candidates.sort((a,b)=>impactScore(b.cells)-impactScore(a.cells));
+          chosen=candidates[0];
+        }
+      }
+      if(!chosen)break;
+      chosen.order=i;
+      arrows.push(chosen);
+      for(const cell of chosen.cells)occupied.add(key(cell.x,cell.y));
+      const d=getDirection(chosen),tip=chosen.cells[chosen.cells.length-1];
+      for(let j=1;j<=size;j++){
+        const x=tip.x+d.x*j,y=tip.y+d.y*j;
+        if(!inGrid(x,y,size))break;
+        const cellId=key(x,y);
+        if(!exitRays.has(cellId))exitRays.set(cellId,new Set());
+        exitRays.get(cellId).add(chosen.id);
+      }
+    }
+    return arrows;
+  }
+
   function generateLevel(level) {
     const config = getLevelConfig(level);
     const rng = randomGenerator(0xA3C8E1 + config.level * 29791);
@@ -190,7 +282,23 @@
     FACE_IDS.slice(0, config.faces).forEach((face, index) => {
       const count = Math.floor(config.target/config.faces) +
         (index < config.target%config.faces ? 1 : 0);
-      arrows.push(...generateFace(rng, config.size, count, face, config.maxLength, config.level));
+      if(config.level<=LEGACY_LEVEL_COUNT){
+        // Keep the exact original shared RNG sequence for legacy puzzles.
+        arrows.push(...generateFace(rng,config.size,count,face,config.maxLength,config.level));
+      }else{
+        let found=null;
+        // Retry difficult packing with distinct reproducible seeds instead
+        // of silently shipping levels with missing arrows.
+        for(let attempt=0;attempt<8;attempt++){
+          const seed=(0xA3C8E1 + config.level*29791 +
+            Math.imul(index+1,0x9e3779b9) + Math.imul(attempt,0x85ebca6b))>>>0;
+          const result=generateAdvancedFace(randomGenerator(seed),
+            config.size,count,face,config.maxLength,config.level);
+          if(result.length===count){found=result;break;}
+        }
+        if(!found)throw new Error(`Unable to generate level ${config.level} face ${face} at target density`);
+        arrows.push(...found);
+      }
     });
     return { ...config, arrows, total: arrows.length };
   }
@@ -201,7 +309,7 @@
     const count=Math.max(0,Math.floor(Number(arrows)||0));
     const lives=Math.max(0,Math.min(MAX_HEARTS,Math.floor(Number(hearts)||0)));
     const assists=Math.max(0,Math.floor(Number(hints)||0));
-    const tierBonus=tier==='Hard'?150:tier==='Medium'?75:25;
+    const tierBonus=({Easy:25,Medium:75,Hard:150,Expert:225,Master:300,Legend:400})[tier]??25;
     return Math.max(0,count*10 + lives*25 + tierBonus - assists*15);
   }
   function getScoreAward(previousBest,score) {
@@ -357,5 +465,5 @@
   // drag still follows the finger after the cube has been tipped over the top.
   function turnDirection(pitch) { return Math.cos(pitch) < 0 ? -1 : 1; }
 
-  return { nearestAngle, turnDirection, faceArrowOpacity, FACE_IDS, LEVEL_COUNT, MAX_HEARTS, pickProjectedArrow, buildArrowHead, buildFlatArrowGeometry, arrowMetrics, sceneScale, getLevelConfig, generateLevel, isBlocked, getBlocker, getDirection, getEscapeShape, availableArrows, calculateLevelScore, getScoreAward };
+  return { nearestAngle, turnDirection, faceArrowOpacity, FACE_IDS, LEVEL_COUNT, LEVEL_TIERS, MAX_HEARTS, pickProjectedArrow, buildArrowHead, buildFlatArrowGeometry, arrowMetrics, sceneScale, getLevelConfig, generateLevel, isBlocked, getBlocker, getDirection, getEscapeShape, availableArrows, calculateLevelScore, getScoreAward };
 });
