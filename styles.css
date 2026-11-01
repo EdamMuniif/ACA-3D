@@ -678,3 +678,137 @@ button:focus-visible,canvas:focus-visible,.name-entry input:focus-visible { outl
   #levelPageLabel{font-size:10px}
   .level-sections{gap:12px}
 }
+
+/* V23 — viewport-fit Home: the menu, live cube and progress share one screen.
+   Only Home is locked; Levels and gameplay retain their natural scrolling.
+   On physically short viewports and enlarged text, Home's inner area may
+   scroll to keep controls accessible instead of clipping content. */
+body.on-home { overflow:hidden; }
+body.on-home .app-shell{
+  height:100vh;height:100dvh;min-height:0;
+  display:grid;grid-template-rows:auto minmax(0,1fr);overflow:hidden;
+}
+body.on-home .page-footer{display:none}
+body.on-home .topbar{min-height:70px;padding:8px clamp(12px,2.8vw,38px);box-shadow:none}
+body.on-home #homeScreen{
+  width:100%;max-width:1440px;height:100%;min-height:0;
+  display:grid;grid-template-rows:auto minmax(0,1fr) auto;
+  gap:clamp(7px,1.3vh,14px);
+  padding:clamp(8px,1.2vh,14px) clamp(10px,2.8vw,40px) clamp(9px,1.2vh,14px);
+  overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;
+  scrollbar-width:thin;scrollbar-color:var(--rule) transparent;
+}
+body.on-home .home-top-tools{margin:0;min-height:43px}
+body.on-home .home-tool-button{width:43px;height:43px;flex-basis:43px}
+body.on-home .home-hero{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:clamp(8px,2vw,26px);height:100%;min-height:0;
+  padding:clamp(16px,3vw,40px);overflow:hidden;align-items:center;
+}
+body.on-home .home-copy{min-width:0;display:flex;flex-direction:column;justify-content:center;align-items:flex-start}
+body.on-home .home-hero h1{
+  font-size:clamp(36px,4.6vw,74px);
+  margin:clamp(7px,1.9vh,20px) 0 clamp(6px,1.6vh,15px);
+}
+body.on-home .home-hero .home-copy>p:not(.hero-greeting):not(.home-footnote){
+  font-size:clamp(12px,1.15vw,16px);line-height:1.45;
+  margin:0 0 clamp(10px,2vh,22px);
+}
+body.on-home .home-hero .home-copy>p.hero-greeting{margin:clamp(5px,1vh,11px) 0 0}
+body.on-home .home-footnote{margin:clamp(7px,1.4vh,16px) 0 0;font-size:10px}
+body.on-home .home-actions{width:100%;max-width:420px}
+body.on-home .home-hero .hero-visual{
+  display:grid;position:relative;width:100%;height:100%;min-height:0;
+  max-width:600px;max-height:unset;aspect-ratio:auto;justify-self:center;
+  place-items:stretch;isolation:isolate;
+}
+.home-cube-stage{pointer-events:none}
+.home-preview-canvas{display:block;width:100%;height:100%;min-width:0;min-height:0;position:relative;z-index:1}
+.home-cube-stage .hero-orbit{z-index:0;opacity:.6}
+.home-cube-label,.home-cube-status{
+  position:absolute;z-index:2;white-space:nowrap;
+  background:rgba(253,251,245,.91);border:1px solid var(--rule);
+  color:var(--ink-2);border-radius:999px;
+  font-size:9px;letter-spacing:.10em;font-weight:800;
+  padding:7px 10px;box-shadow:0 4px 13px #1B1D2210
+}
+.home-cube-label{left:1%;top:3%}
+.home-cube-label .live-dot{width:6px;height:6px;margin-right:4px}
+.home-cube-status{right:2%;bottom:4%;color:var(--vermilion)}
+body.on-home .home-bottom{margin:0;min-height:0}
+body.on-home .home-stats-card{padding:clamp(12px,1.7vh,19px) clamp(15px,2.5vw,28px)}
+body.on-home .home-stats-grid{margin-top:clamp(7px,1.2vh,13px);gap:clamp(6px,1.6vw,18px)}
+body.on-home .home-stats-grid strong{font-size:clamp(21px,2.5vw,34px)}
+body.on-home .home-stats-grid span{line-height:1.2}
+body.on-home .home-progress-rail{margin-top:clamp(7px,1vh,12px);height:7px}
+@media(max-width:900px){
+  body.on-home .topbar{
+    display:flex;flex-direction:row;align-items:center;justify-content:space-between;
+    flex-wrap:nowrap;gap:9px;min-height:60px;padding:8px 12px;
+  }
+  body.on-home .brand{min-width:0;flex:0 1 auto}
+  body.on-home .brand-title{font-size:clamp(13px,1.9vw,17px);white-space:nowrap}
+  body.on-home .brand-subtitle{font-size:8px;letter-spacing:.06em}
+  body.on-home .brand-icon{width:38px;height:38px;flex:0 0 38px}
+  body.on-home .header-controls{display:flex;flex:0 0 auto;width:auto;min-width:0;gap:6px;grid-template-columns:none}
+  body.on-home .top-nav-btn{min-width:0;width:auto;min-height:40px;height:40px;padding:0 12px;font-size:12px}
+  body.on-home .header-icon{width:40px;height:40px;flex:0 0 40px}
+  body.on-home .offline-chip{display:none}
+}
+@media(max-width:740px){
+  body.on-home .home-hero{
+    grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(95px,1fr);
+    gap:0;padding:clamp(12px,2.2vh,20px) clamp(13px,3vw,19px);
+  }
+  body.on-home .home-copy{align-self:start}
+  body.on-home .home-hero h1{font-size:clamp(34px,8.8vw,48px);margin:7px 0 8px;line-height:.95}
+  body.on-home .home-hero .home-copy>p:not(.hero-greeting):not(.home-footnote){
+    font-size:12px;line-height:1.35;margin:0 0 10px;max-width:440px
+  }
+  body.on-home .home-hero .home-copy>p.hero-greeting{margin:5px 0 0;font-size:11px}
+  body.on-home .home-footnote{display:none}
+  body.on-home .home-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.82fr);gap:8px}
+  body.on-home .home-actions .hero-btn{min-height:43px;padding:0 8px;font-size:12px}
+  body.on-home .home-hero .hero-visual{
+    display:grid;min-height:95px;width:100%;height:100%;max-width:480px;
+    max-height:none;justify-self:center
+  }
+  body.on-home .home-bottom .home-stats-card{padding:11px 14px}
+  body.on-home .home-stats-grid{gap:6px;margin-top:7px}
+  body.on-home .home-stats-grid strong{font-size:clamp(19px,5.4vw,26px)}
+  body.on-home .home-stats-grid span{font-size:8px;letter-spacing:.05em}
+  body.on-home .home-progress-rail{margin-top:8px;height:6px}
+  .home-cube-label,.home-cube-status{font-size:8px;padding:5px 7px}
+}
+@media(max-width:570px){
+  body.on-home .topbar{min-height:54px;padding:6px 9px;gap:6px}
+  body.on-home .brand-title{font-size:13px}
+  body.on-home .brand-subtitle{display:none}
+  body.on-home .brand-icon{width:33px;height:33px;flex-basis:33px}
+  body.on-home .brand{gap:6px}
+  body.on-home .top-nav-btn{min-height:36px;height:36px;padding:0 9px;font-size:11px}
+  body.on-home .header-icon{width:36px;height:36px;flex-basis:36px}
+  body.on-home .header-controls{gap:4px}
+  body.on-home #homeScreen{gap:7px;padding:7px 9px}
+  body.on-home .home-top-tools{min-height:36px}
+  body.on-home .home-tool-button{width:36px;height:36px;flex-basis:36px}
+  body.on-home .home-tool-button svg{width:20px;height:20px}
+}
+@media(max-width:410px){
+  body.on-home .brand-title{display:none}
+  body.on-home .home-kicker{font-size:8px}
+}
+@media(max-height:680px) and (max-width:740px){
+  body.on-home .home-hero{padding:9px 12px}
+  body.on-home .home-hero h1{font-size:clamp(30px,7.7vw,39px);margin:4px 0 5px}
+  body.on-home .home-hero .home-copy>p:not(.hero-greeting):not(.home-footnote){
+    font-size:11px;line-height:1.25;margin-bottom:7px
+  }
+  body.on-home .home-actions .hero-btn{min-height:39px}
+  body.on-home .home-top-tools{min-height:32px}
+  body.on-home .home-tool-button{width:34px;height:34px;flex-basis:34px}
+  body.on-home .home-stats-card .section-kicker{font-size:9px}
+}
+@media(prefers-reduced-motion:reduce){
+  .home-cube-stage .hero-orbit{animation:none}
+}

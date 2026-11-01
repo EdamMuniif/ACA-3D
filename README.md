@@ -197,3 +197,9 @@ The home page has **one** progress summary, not duplicate counters in the hero a
 - Tier score bonuses: Easy 25, Medium 75, Hard 150, Expert 225, Master 300, Legend 400. Replays still award only the increase over the best score.
 - The cube remains 3D with perspective-correct thick, flat printed arrows; full-body taps, five hearts, arrow escape physics, and audio settings are unchanged.
 - **Before inviting friends**, verify generation and solvability via `node --test tests/*.test.cjs`, then perform a hands-on mobile check at Levels 1, 15, 16, 30, 60, and 100 (using a test save in an isolated browser only if needed). Unlocking follows sequential completion; no public leaderboard or online account is provided.
+
+## V23 — viewport-fit home and animated cube showcase
+
+- **Home app shell:** Home fills the available `100dvh` viewport on phones, iPhones, tablets, laptops and monitors, with an intentionally compact header, profile/help icons, primary Play and Levels actions, and a single progress summary. Normal viewport heights fit without body scrolling. On exceptionally short viewports or large text, the Home content area may scroll internally rather than cutting off accessible buttons. Level selection and gameplay retain their existing scrolling behavior.
+- **Animated 3D cube:** Replaces the static SVG illustration with a lightweight, separate Canvas showcase using `Core.generateLevel(2)`, `getEscapeShape` and `buildFlatArrowGeometry`. The cube gently tilts, displays a perspective grid with face-colored, flat ink arrows, and releases a few available arrows head-first before looping. It does not read or write gameplay progress.
+- The preview uses a capped device-pixel ratio and ~30fps painting, skips painting when the page is hidden, and displays a still cube when reduced motion is requested. No additional runtime dependency is required. A new regression test checks the animation, static fallback, screen states and offline asset caching.

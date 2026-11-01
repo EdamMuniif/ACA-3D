@@ -169,6 +169,7 @@
     updateProfileDisplays();
     if(which==='levels') { levelPage=Math.floor((currentLevel-1)/LEVEL_PAGE_SIZE);renderLevels(); }
     document.body.classList.toggle('playing',which==='play');
+    document.body.classList.toggle('on-home',which==='home');
     if(which==='play') { refreshSize(); requestAnimationFrame(refreshSize); }
     window.scrollTo(0,0);
   }
