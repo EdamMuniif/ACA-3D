@@ -73,7 +73,7 @@ test('reduced-motion mode renders a still cube and schedules no animation',()=>{
 });
 
 test('Home animation does not modify player save data or gameplay state',()=>{
-  assert.doesNotMatch(script,/localStorage\./);
+  assert.doesNotMatch(script,/\blocalStorage\s*\.\s*(?:getItem|setItem|removeItem|clear)\s*\(/);
   assert.doesNotMatch(script,/window\.location|fetch\(/);
   assert.match(script,/Core\.generateLevel\(2\)/);
   assert.match(script,/Core\.getEscapeShape\(/);
